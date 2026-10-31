@@ -131,6 +131,22 @@ details.team[open] summary::after{transform:rotate(-135deg)}
 /* tryb edycji */
 .dev-bar{background:#fff7e0;border:1px dashed var(--gold);border-radius:14px;padding:12px 14px;margin:6px 0 4px;font-size:14px;display:grid;gap:4px}
 .dev-bar div{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.dev-bar button.primary{background:var(--green);color:#fff;border-color:var(--green)}
+button.chip{font:inherit;font-size:14px;cursor:pointer}
+.chip.add{background:var(--gold-2);color:#7a5a17;font-weight:600}
+.edit-actions button.danger{color:var(--red);border-color:#f0c9c4}
+.edit-actions.sticky{position:sticky;bottom:0;background:var(--paper);padding:10px 0 calc(12px + env(safe-area-inset-bottom));margin:0;border-top:1px solid var(--line)}
+.form{display:grid;gap:10px;margin-bottom:12px}
+.form label,.form .label{display:grid;gap:4px;font-weight:600;font-size:14px}
+.form small{font-weight:400;color:var(--muted)}
+.form textarea{resize:vertical;min-height:140px;line-height:1.5}
+.form select{appearance:auto}
+.gallery button .x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;font-size:13px}
+.picker{grid-template-columns:repeat(3,1fr)!important;padding:0 6px}
+.picker button{aspect-ratio:1!important;grid-column:auto!important}
+.picker .tick{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.25);color:transparent;display:grid;place-items:center;font-weight:700}
+.picker button.on{outline:3px solid var(--green);outline-offset:-3px}
+.picker button.on .tick{background:var(--green);color:#fff}
 .dev-bar button,.edit-actions button{padding:9px 14px;border-radius:10px;background:var(--paper);border:1px solid var(--line);font-weight:600;font-size:14px}
 .edit-actions button.primary{background:var(--green);color:#fff;border-color:var(--green)}
 #editBox{padding:10px 16px 0;overflow-y:auto}
@@ -192,19 +208,44 @@ details.team[open] summary::after{transform:rotate(-135deg)}
 <script>
 (() => {
   const $ = s => document.querySelector(s);
-  // BASE = kronika jak w Google Docs; years = po ręcznych przenosinach zdjęć (DATA.moves)
+  // BASE = kronika jak w Google Docs; years = po zmianach kronikarza (photos.json: zdjęcia, skład, nowe wpisy)
   const BASE = DATA.years;
   BASE.forEach(y => y.sections.forEach((s, i) => {
     s.id = `${y.year}-${i + 1}`; s.key = `${y.year}|${s.title}`;
     s.blocks.forEach(([k, v]) => k === "gallery" && v.forEach(im => im.home = s.key));
   }));
-  let moves = {...(DATA.moves || {})}, hidden = [];
+  const normEdits = d => ({...d, moves: d.moves || {}, members: d.members || {}, posts: d.posts || []});
+  let edits = normEdits(DATA.edits || {}), hidden = [];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const strip = s => s.replace(/<[^>]+>/g, "");
+  const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l");
+  const textBlocks = t => (t || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(p => ["text", esc(p).replace(/\n/g, "<br>")]);
   let years = materialize();
 
   function materialize() {
-    const ys = BASE.map(y => ({...y, sections: y.sections.map(s => ({...s, blocks: s.blocks.map(([k, v]) => [k, k === "gallery" ? [...v] : v])}))}));
+    const ys = BASE.map(y => ({...y, members: [...y.members], sections: y.sections.map(s => ({...s, blocks: s.blocks.map(([k, v]) => [k, k === "gallery" ? [...v] : v])}))}));
+    for (const p of edits.posts) if (!ys.some(y => y.year === p.year)) ys.push({year: p.year, members: [], covers: [], sections: []});
+    ys.sort((a, b) => a.year.localeCompare(b.year));
+    // skład zespołu
+    for (const y of ys) {
+      const m = edits.members[y.year]; if (!m) continue;
+      y.members = y.members.filter(n => !(m.remove || []).includes(n)).map(n => (m.rename || {})[n] || n);
+      for (const a of m.add || []) if (!y.members.includes(a)) y.members.push(a);
+    }
+    // nowe wpisy kronikarza
+    for (const p of edits.posts) {
+      const y = ys.find(x => x.year === p.year);
+      const sec = {id: `${p.year}-p${p.id}`, key: `${p.year}|post:${p.id}`, post: p, title: p.title, date: p.date || "", blocks: textBlocks(p.text)};
+      let i = y.sections.length;
+      if (p.after === "start") i = 0;
+      else if (p.after) { const j = y.sections.findIndex(s => s.key === p.after); if (j >= 0) i = j + 1; }
+      while (p.after && y.sections[i] && y.sections[i].post) i++;
+      y.sections.splice(i, 0, sec);
+    }
+    // przenosiny zdjęć
     const byKey = {}, imgs = {};
     ys.forEach(y => y.sections.forEach(s => { byKey[s.key] = s; s.blocks.forEach(([k, v]) => k === "gallery" && v.forEach(im => imgs[im.id] = im)); }));
+    const moves = edits.moves;
     const moving = Object.keys(moves).filter(id => imgs[id] && (moves[id] === "hidden" || byKey[moves[id]]));
     const out = new Set(moving);
     ys.forEach(y => y.sections.forEach(s => {
@@ -216,23 +257,21 @@ details.team[open] summary::after{transform:rotate(-135deg)}
       const b = byKey[moves[id]].blocks, last = b[b.length - 1];
       if (last && last[0] === "gallery") last[1].push(imgs[id]); else b.push(["gallery", [imgs[id]]]);
     }
-    ys.forEach(y => y.sections = y.sections.filter(s => s.blocks.length));
-    return ys;
+    ys.forEach(y => y.sections = y.sections.filter(s => s.blocks.length || s.post));
+    return ys.filter(y => y.sections.length || y.members.length);
   }
-  const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  const strip = s => s.replace(/<[^>]+>/g, "");
-  const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l");
 
-  // statystyki
-  const nSec = years.reduce((a, y) => a + y.sections.length, 0);
-  const nImg = years.reduce((a, y) => a + y.sections.reduce((b, s) => b + s.blocks.filter(x => x[0] === "gallery").reduce((c, g) => c + g[1].length, 0), 0), 0);
-  $("#stats").innerHTML = `<span class="stat"><b>${years.length}</b> ${years.length === 1 ? "rok" : "lata"}</span><span class="stat"><b>${nSec}</b> wpisów</span><span class="stat"><b>${nImg}</b> zdjęć</span>`;
-
-  // zakładki lat
-  $("#years").innerHTML = years.map(y => `<button class="year-btn" role="tab" data-y="${y.year}">${y.year || "Kronika"}</button>`).join("");
+  // statystyki i zakładki lat
+  function renderTop() {
+    const nSec = years.reduce((a, y) => a + y.sections.length, 0);
+    const nImg = years.reduce((a, y) => a + y.sections.reduce((b, s) => b + s.blocks.filter(x => x[0] === "gallery").reduce((c, g) => c + g[1].length, 0), 0), 0);
+    $("#stats").innerHTML = `<span class="stat"><b>${years.length}</b> ${years.length === 1 ? "rok" : "lata"}</span><span class="stat"><b>${nSec}</b> wpisów</span><span class="stat"><b>${nImg}</b> zdjęć</span>`;
+    $("#years").innerHTML = years.map(y => `<button class="year-btn" role="tab" data-y="${y.year}"${current && current.year === y.year ? ` aria-current="true"` : ""}>${y.year || "Kronika"}</button>`).join("");
+  }
   $("#years").addEventListener("click", e => { const b = e.target.closest(".year-btn"); if (b) go(b.dataset.y, true); });
 
   let current = null, lbImgs = [];
+  renderTop();
   // tryb edycji tylko dla kronikarza: hasło przy wejściu (5× stuknij logo albo adres z ?edytuj)
   const PASS = "1234";
   let DEV = (() => { try { return localStorage.getItem("kronika-dev") === "1"; } catch { return false; } })();
@@ -244,17 +283,18 @@ details.team[open] summary::after{transform:rotate(-135deg)}
       const start = lbImgs.length; lbImgs.push(...imgs);
       const show = DEV ? imgs : imgs.slice(0, 5), cls = imgs.length === 1 ? "one" : (show.length % 2 ? "odd" : "");
       return `<div class="gallery ${cls}">${show.map((im, i) =>
-        `<button data-i="${start + i}" data-id="${im.id}" aria-label="Powiększ zdjęcie"><img src="${im.src}" width="${im.w}" height="${im.h}" loading="lazy" decoding="async" alt="">${i === 4 && imgs.length > 5 ? `<span class="plus">+${imgs.length - 5}</span>` : ""}</button>`).join("")}</div>`;
+        `<button data-i="${start + i}" data-id="${im.id}" aria-label="Powiększ zdjęcie"><img src="${im.src}" width="${im.w}" height="${im.h}" loading="lazy" decoding="async" alt="">${!DEV && i === 4 && imgs.length > 5 ? `<span class="plus">+${imgs.length - 5}</span>` : ""}</button>`).join("")}</div>`;
     };
-    let h = DEV ? `<div class="dev-bar"><b>✎ Tryb edycji zdjęć</b><span>Kliknij zdjęcie, żeby je przenieść albo ukryć.</span><div><button data-dev="hidden">Ukryte (${hidden.length})</button><button data-dev="off">Wyłącz edycję</button></div></div>` : "";
+    let h = DEV ? `<div class="dev-bar"><b>✎ Tryb kronikarza</b><span>Kliknij zdjęcie, osobę ze składu albo „Nowy wpis”.</span><div><button data-dev="post" class="primary">+ Nowy wpis</button><button data-dev="hidden">Ukryte zdjęcia (${hidden.length})</button><button data-dev="off">Wyłącz edycję</button></div></div>` : "";
     h += `<div class="year-head"><h2>${y.year}</h2><span>${y.sections.length} wpisów</span></div>`;
-    if (y.members.length) h += `<details class="team"><summary>Skład zespołu · ${y.members.length} osób</summary><div class="chips">${y.members.map(m => `<span class="chip">${esc(m)}</span>`).join("")}</div></details>`;
+    if (y.members.length || DEV) h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary><div class="chips">${y.members.map(m => DEV ? `<button class="chip" data-member="${esc(m)}">${esc(m)} ✎</button>` : `<span class="chip">${esc(m)}</span>`).join("")}${DEV ? `<button class="chip add" data-member="">+ Dodaj osobę</button>` : ""}</div></details>`;
     h += `<div class="timeline">` + y.sections.map(s => {
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : gallery(v)).join("");
-      const len = strip(body).length;
-      return `<article class="entry" id="${s.id}"><div class="card${len > 900 ? " collapsed" : ""}">
-        <div class="card-head"><span class="date${s.date ? "" : " nodate"}">${s.date ? esc(s.date) : "✦ " + y.year}</span><h3>${esc(s.title)}</h3></div>
-        <div class="card-body">${body}</div>${len > 900 ? `<button class="more">Czytaj dalej</button>` : ""}</div></article>`;
+      const len = strip(body).length, fold = len > 900 && !DEV;
+      return `<article class="entry" id="${s.id}"><div class="card${fold ? " collapsed" : ""}">
+        <div class="card-head"><span class="date${s.date ? "" : " nodate"}">${s.date ? esc(s.date) : "✦ " + y.year}</span><h3>${esc(s.title)}</h3>
+        ${DEV && s.post ? `<div class="edit-actions" style="margin:10px 0 0"><button data-post="${s.post.id}">✎ Edytuj wpis</button></div>` : ""}</div>
+        <div class="card-body">${body}</div>${fold ? `<button class="more">Czytaj dalej</button>` : ""}</div></article>`;
     }).join("") + `</div>`;
     if (idx < years.length - 1) h += `<button class="next-year" data-y="${years[idx + 1].year}">Dalej: rok ${years[idx + 1].year} →</button>`;
     else if (idx > 0) h += `<button class="next-year" data-y="${years[0].year}">← Wróć do roku ${years[0].year}</button>`;
@@ -280,10 +320,16 @@ details.team[open] summary::after{transform:rotate(-135deg)}
     const ny = e.target.closest(".next-year");
     if (ny) return go(ny.dataset.y, true);
     const g = e.target.closest(".gallery button");
-    if (g) DEV ? openEdit(g.dataset.id) : openLb(+g.dataset.i);
+    if (g) return DEV ? openEdit(g.dataset.id) : openLb(+g.dataset.i);
+    const mb = e.target.closest("[data-member]");
+    if (mb) { e.preventDefault(); return openMember(current.year, mb.dataset.member); }
+    const pb = e.target.closest("[data-post]");
+    if (pb) return openPost(edits.posts.find(p => p.id === pb.dataset.post));
     const d = e.target.closest("[data-dev]");
-    if (d && d.dataset.dev === "hidden") openHidden();
-    if (d && d.dataset.dev === "off") { try { localStorage.removeItem("kronika-dev"); } catch {} DEV = false; refresh(); }
+    if (!d) return;
+    if (d.dataset.dev === "hidden") openHidden();
+    if (d.dataset.dev === "post") openPost(null);
+    if (d.dataset.dev === "off") { try { localStorage.removeItem("kronika-dev"); } catch {} DEV = false; refresh(); }
   });
 
   // spis treści
@@ -337,7 +383,7 @@ details.team[open] summary::after{transform:rotate(-135deg)}
   });
   document.addEventListener("keydown", e => {
     if (lb.classList.contains("show")) { if (e.key === "Escape") closeLb(); if (e.key === "ArrowLeft") show(li - 1); if (e.key === "ArrowRight") show(li + 1); }
-    else if (e.key === "Escape") closeToc();
+    else if (e.key === "Escape") { closeToc(); closeEdit(); }
   });
 
   // przycisk do góry
@@ -345,83 +391,188 @@ details.team[open] summary::after{transform:rotate(-135deg)}
   addEventListener("scroll", () => fab.classList.toggle("show", scrollY > 900), {passive: true});
   fab.onclick = () => scrollTo({top: 0, behavior: "smooth"});
 
-  // start: rok z adresu albo najnowszy
-  // --- tryb edycji zdjęć ---------------------------------------------------
-  function refresh() {
-    const y = current && current.year, sy = scrollY;
+  // --- tryb kronikarza --------------------------------------------------------
+  function refresh(toYear) {
+    const y = toYear || (current && current.year), sy = scrollY;
     years = materialize(); current = null;
-    const cy = years.find(x => x.year === y);
-    if (cy) { current = cy; renderYear(cy); scrollTo(0, sy); }
+    const cy = years.find(x => x.year === y) || years[years.length - 1];
+    current = cy; renderTop(); renderYear(cy);
+    if (!toYear) scrollTo(0, sy);
   }
   const toast = (msg, ms = 3500) => { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), ms); };
   const editWrap = $("#editWrap"), editBox = $("#editBox");
   const closeEdit = () => editWrap.classList.remove("open");
+  const openSheet = (html, onclick) => { editBox.innerHTML = `<div class="grip"></div>` + html; editBox.onclick = onclick; editWrap.classList.add("open"); editBox.scrollTop = 0; };
   $("#editScrim").onclick = closeEdit;
-  const findImg = id => { for (const y of BASE) for (const s of y.sections) for (const [k, v] of s.blocks) if (k === "gallery") { const im = v.find(x => x.id === id); if (im) return im; } };
+  const allImgs = () => BASE.flatMap(y => y.sections.flatMap(s => s.blocks.filter(b => b[0] === "gallery").flatMap(b => b[1])));
+  const findImg = id => allImgs().find(x => x.id === id);
   const placeOf = id => { for (const y of years) for (const s of y.sections) for (const [k, v] of s.blocks) if (k === "gallery" && v.some(x => x.id === id)) return s; };
-  const titleOf = key => key.split("|").slice(1).join("|");
+  const titleOfKey = key => { for (const y of years) for (const s of y.sections) if (s.key === key) return s.title; return key.split("|").slice(1).join("|"); };
+
+  // każda zmiana = funkcja na obiekcie zmian; wykonuje się lokalnie i na świeżym photos.json z GitHuba
+  function commit(fn, msg, toYear, scrollId) {
+    fn(edits); closeEdit(); refresh(toYear);
+    if (scrollId) requestAnimationFrame(() => document.getElementById(scrollId)?.scrollIntoView({behavior: "smooth"}));
+    save(fn, msg);
+  }
 
   function askPassword() {
-    editBox.innerHTML = `<div class="grip"></div><h4 class="edit-h">Tryb kronikarza</h4>
+    openSheet(`<h4 class="edit-h">Tryb kronikarza</h4>
       <input class="search" id="passIn" type="password" inputmode="numeric" placeholder="Hasło" autocomplete="off">
-      <div class="edit-actions" style="margin-top:12px"><button data-act="pass" class="primary">Wejdź</button></div>`;
+      <div class="edit-actions" style="margin-top:12px"><button data-act="pass" class="primary">Wejdź</button></div>`,
+      e => { if (e.target.closest("[data-act=pass]")) tryIt(); });
     const tryIt = () => {
       if ($("#passIn").value.trim() !== PASS) { toast("Złe hasło"); return; }
       try { localStorage.setItem("kronika-dev", "1"); } catch {}
-      DEV = true; closeEdit(); refresh(); loadMoves();
+      DEV = true; closeEdit(); refresh(); loadEdits();
       history.replaceState(null, "", location.pathname + location.hash);
       toast("Tryb kronikarza włączony");
     };
-    editBox.onclick = e => { if (e.target.closest("[data-act=pass]")) tryIt(); };
-    editWrap.classList.add("open");
     setTimeout(() => { const i = $("#passIn"); i.focus(); i.onkeydown = e => { if (e.key === "Enter") tryIt(); }; }, 300);
   }
   let taps = 0, tapT;
   $(".hero img").addEventListener("click", () => { taps++; clearTimeout(tapT); tapT = setTimeout(() => taps = 0, 1500); if (taps >= 5 && !DEV) { taps = 0; askPassword(); } });
   if (!DEV && new URLSearchParams(location.search).has("edytuj")) askPassword();
 
+  // zdjęcie: przenieś / ukryj / przywróć
   function openEdit(id) {
-    const im = findImg(id), place = placeOf(id), isHidden = moves[id] === "hidden";
-    const moved = moves[id] && moves[id] !== im.home;
-    editBox.innerHTML = `<div class="grip"></div>
-      <img class="edit-prev" src="${im.src}" alt="">
-      <p class="edit-where">${isHidden ? "Zdjęcie jest <b>ukryte</b>." : `Teraz w: <b>${esc(place ? place.title : "?")}</b>`}${moved ? `<br><small>Oryginalnie: ${esc(titleOf(im.home))}</small>` : ""}</p>
+    const im = findImg(id), place = placeOf(id), isHidden = edits.moves[id] === "hidden";
+    const moved = edits.moves[id] && edits.moves[id] !== im.home;
+    openSheet(`<img class="edit-prev" src="${im.src}" alt="">
+      <p class="edit-where">${isHidden ? "Zdjęcie jest <b>ukryte</b>." : `Teraz w: <b>${esc(place ? place.title : "?")}</b>`}${moved ? `<br><small>Oryginalnie: ${esc(titleOfKey(im.home))}</small>` : ""}</p>
       <div class="edit-actions">
         ${isHidden ? `<button data-act="show">Pokaż z powrotem</button>` : `<button data-act="hide">Ukryj zdjęcie</button>`}
         ${moved ? `<button data-act="home">Przywróć na oryginalne miejsce</button>` : ""}
       </div>
       <input class="search" id="editSearch" type="search" placeholder="Przenieś do… (szukaj wpisu)" autocomplete="off">
-      <div class="toc edit-list" id="editList"></div>`;
+      <div class="toc edit-list" id="editList"></div>`, e => {
+      const a = e.target.closest("[data-to]"), act = e.target.closest("[data-act]");
+      if (a) { e.preventDefault(); setMove(id, a.dataset.to, `Przeniesiono do: ${titleOfKey(a.dataset.to)}`); }
+      else if (act) setMove(id, act.dataset.act === "hide" ? "hidden" : im.home, act.dataset.act === "hide" ? "Zdjęcie ukryte" : "Zdjęcie wróciło na miejsce");
+    });
     const list = q => {
       const nq = norm(q.trim());
-      $("#editList").innerHTML = [...BASE].reverse().map(y => {
+      $("#editList").innerHTML = [...years].reverse().map(y => {
         const it = y.sections.filter(s => !nq || norm(s.title + " " + s.date).includes(nq));
         return it.length ? `<h4>${y.year}</h4>` + it.map(s => `<a href="#" data-to="${esc(s.key)}"${place && place.key === s.key ? ` class="here"` : ""}><small>${s.date ? esc(s.date) : "✦"}</small><span>${esc(s.title)}</span></a>`).join("") : "";
       }).join("") || `<div class="empty">Nic nie znaleziono</div>`;
     };
     list("");
     $("#editSearch").oninput = e => list(e.target.value);
-    editBox.onclick = e => {
-      const a = e.target.closest("[data-to]"), act = e.target.closest("[data-act]");
-      if (a) { e.preventDefault(); setMove(id, a.dataset.to, `Przeniesiono do: ${titleOf(a.dataset.to)}`); }
-      else if (act) setMove(id, act.dataset.act === "hide" ? "hidden" : im.home, act.dataset.act === "hide" ? "Zdjęcie ukryte" : "Zdjęcie wróciło na miejsce");
-    };
-    editWrap.classList.add("open");
   }
 
   function openHidden() {
-    editBox.innerHTML = `<div class="grip"></div><h4 class="edit-h">Ukryte zdjęcia</h4>` + (hidden.length
+    openSheet(`<h4 class="edit-h">Ukryte zdjęcia</h4>` + (hidden.length
       ? `<div class="gallery">${hidden.map(im => `<button data-hid="${im.id}"><img src="${im.src}" alt=""></button>`).join("")}</div>`
-      : `<div class="empty">Brak ukrytych zdjęć</div>`);
-    editBox.onclick = e => { const b = e.target.closest("[data-hid]"); if (b) openEdit(b.dataset.hid); };
-    editWrap.classList.add("open");
+      : `<div class="empty">Brak ukrytych zdjęć</div>`),
+      e => { const b = e.target.closest("[data-hid]"); if (b) openEdit(b.dataset.hid); });
   }
 
   function setMove(id, target, msg) {
-    const im = findImg(id);
-    if (target === im.home) delete moves[id]; else moves[id] = target;
-    closeEdit(); refresh();
-    save(id, moves[id] || null, msg);
+    const home = findImg(id).home;
+    commit(d => { if (target === home) delete d.moves[id]; else d.moves[id] = target; }, msg);
+  }
+
+  // skład zespołu: popraw / usuń / dodaj osobę (zmiany per rok, oryginał zostaje w Google Docs)
+  function openMember(year, name) {
+    const isNew = !name;
+    openSheet(`<h4 class="edit-h">${isNew ? `Dodaj osobę – ${year}` : "Osoba w składzie"}</h4>
+      <input class="search" id="memIn" type="text" placeholder="Imię i nazwisko" value="${esc(name)}" autocomplete="off">
+      <div class="edit-actions" style="margin-top:12px">
+        <button data-act="ok" class="primary">${isNew ? "Dodaj" : "Zapisz zmianę"}</button>
+        ${isNew ? "" : `<button data-act="del" class="danger">Usuń ze składu ${year}</button>`}
+      </div>`, e => {
+      const act = e.target.closest("[data-act]"); if (!act) return;
+      const v = $("#memIn").value.trim().replace(/\s+/g, " ");
+      if (act.dataset.act === "del") return commit(d => memberOp(d, year, "remove", name), `Usunięto ze składu: ${name}`);
+      if (!v || v === name) return closeEdit();
+      if (isNew) commit(d => memberOp(d, year, "add", v), `Dodano do składu: ${v}`);
+      else commit(d => memberOp(d, year, "rename", name, v), `Poprawiono: ${name} → ${v}`);
+    });
+    setTimeout(() => { const i = $("#memIn"); i.focus(); i.onkeydown = e => { if (e.key === "Enter") editBox.querySelector("[data-act=ok]").click(); }; }, 300);
+  }
+  function memberOp(d, year, op, name, to) {
+    const m = d.members[year] = d.members[year] || {};
+    m.add = m.add || []; m.remove = m.remove || []; m.rename = m.rename || {};
+    const orig = Object.keys(m.rename).find(k => m.rename[k] === name) || name;  // nazwa z Google Docs
+    if (op === "add") { if (m.remove.includes(name)) m.remove = m.remove.filter(n => n !== name); else if (!m.add.includes(name)) m.add.push(name); }
+    if (op === "remove") { if (m.add.includes(name)) m.add = m.add.filter(n => n !== name); else { m.remove.push(orig); delete m.rename[orig]; } }
+    if (op === "rename") { if (m.add.includes(name)) m.add = m.add.map(n => n === name ? to : n); else if (to === orig) delete m.rename[orig]; else m.rename[orig] = to; }
+  }
+
+  // nowy wpis / edycja wpisu: tytuł, data, tekst, miejsce w kronice, zdjęcia wybrane z kroniki
+  let draft = null;
+  function openPost(post) {
+    const key = post ? `${post.year}|post:${post.id}` : null;
+    draft = post ? {...post, photos: Object.keys(edits.moves).filter(id => edits.moves[id] === key)}
+      : {id: Date.now().toString(36), year: current.year, date: "", title: "", text: "", after: "", photos: [], isNew: true};
+    postForm();
+  }
+  function readForm() {
+    const f = id => editBox.querySelector("#" + id);
+    if (!f("pTitle")) return;
+    draft.year = f("pYear").value.trim() || draft.year; draft.date = f("pDate").value.trim(); draft.title = f("pTitle").value.trim();
+    draft.text = f("pText").value; draft.after = f("pAfter").value;
+  }
+  function postForm() {
+    const y = years.find(x => x.year === draft.year);
+    const secs = y ? y.sections.filter(s => !(s.post && s.post.id === draft.id)) : [];
+    const thumbs = draft.photos.map(id => findImg(id)).filter(Boolean);
+    openSheet(`<h4 class="edit-h">${draft.isNew ? "Nowy wpis" : "Edytuj wpis"}</h4>
+      <div class="form">
+        <label>Rok<input id="pYear" class="search" inputmode="numeric" value="${esc(draft.year)}"></label>
+        <label>Data <small>(opcjonalnie, np. 12.11)</small><input id="pDate" class="search" value="${esc(draft.date)}"></label>
+        <label>Tytuł<input id="pTitle" class="search" value="${esc(draft.title)}" placeholder="np. Wyjazd do Wisły"></label>
+        <label>Tekst <small>(pusta linijka = nowy akapit)</small><textarea id="pText" class="search" rows="8">${esc(draft.text)}</textarea></label>
+        <label>Gdzie w kronice<select id="pAfter" class="search">
+          <option value="">Na końcu roku ${esc(draft.year)}</option>
+          <option value="start"${draft.after === "start" ? " selected" : ""}>Na początku roku</option>
+          ${secs.map(s => `<option value="${esc(s.key)}"${draft.after === s.key ? " selected" : ""}>Po: ${esc((s.date ? s.date + " " : "") + s.title)}</option>`).join("")}
+        </select></label>
+        <div class="label">Zdjęcia (${thumbs.length})</div>
+        ${thumbs.length ? `<div class="gallery">${thumbs.map(im => `<button data-pick="${im.id}" title="Usuń z wpisu"><img src="${im.src}" alt=""><span class="x">✕</span></button>`).join("")}</div>` : ""}
+        <div class="edit-actions"><button data-act="pick">+ Wybierz zdjęcia z kroniki</button></div>
+      </div>
+      <div class="edit-actions sticky">
+        <button data-act="save" class="primary">${draft.isNew ? "Dodaj wpis" : "Zapisz"}</button>
+        ${draft.isNew ? "" : `<button data-act="delpost" class="danger">Usuń wpis</button>`}
+      </div>`, e => {
+      const act = e.target.closest("[data-act]"), pk = e.target.closest("[data-pick]");
+      if (pk) { readForm(); draft.photos = draft.photos.filter(x => x !== pk.dataset.pick); return postForm(); }
+      if (!act) return;
+      readForm();
+      if (act.dataset.act === "pick") return photoPicker();
+      if (act.dataset.act === "delpost") {
+        if (!confirm(`Usunąć wpis „${draft.title}”? Zdjęcia wrócą na swoje miejsca.`)) return;
+        const id = draft.id, k = `${draft.year}|post:${id}`;
+        return commit(d => { d.posts = d.posts.filter(p => p.id !== id); for (const x of Object.keys(d.moves)) if (d.moves[x] === k || d.moves[x].endsWith(`|post:${id}`)) delete d.moves[x]; }, `Usunięto wpis: ${draft.title}`);
+      }
+      if (!/^\d{4}$/.test(draft.year)) return toast("Rok musi mieć 4 cyfry");
+      if (!draft.title) return toast("Wpisz tytuł");
+      const p = {id: draft.id, year: draft.year, date: draft.date, title: draft.title, text: draft.text.trim(), after: draft.after};
+      const k = `${p.year}|post:${p.id}`, photos = [...draft.photos];
+      commit(d => {
+        const i = d.posts.findIndex(x => x.id === p.id);
+        if (i >= 0) d.posts[i] = p; else d.posts.push(p);
+        for (const x of Object.keys(d.moves)) if (d.moves[x].endsWith(`|post:${p.id}`) && !photos.includes(x)) delete d.moves[x];
+        for (const x of photos) d.moves[x] = k;
+      }, `${draft.isNew ? "Dodano" : "Zapisano"} wpis: ${p.title}`, p.year, `${p.year}-p${p.id}`);
+    });
+    editBox.querySelector("#pYear").onchange = () => { readForm(); draft.after = ""; postForm(); };
+  }
+  function photoPicker() {
+    const sel = new Set(draft.photos);
+    const groups = [...BASE].reverse().map(y => {
+      const ims = y.sections.flatMap(s => s.blocks.filter(b => b[0] === "gallery").flatMap(b => b[1]));
+      return ims.length ? `<h4>${y.year}</h4><div class="gallery picker">${ims.map(im => `<button data-sel="${im.id}" class="${sel.has(im.id) ? "on" : ""}"><img src="${im.src}" loading="lazy" alt=""><span class="tick">✓</span></button>`).join("")}</div>` : "";
+    }).join("");
+    openSheet(`<h4 class="edit-h">Wybierz zdjęcia</h4><p class="edit-where"><small>Zaznaczone zdjęcia przeniosą się do tego wpisu.</small></p>
+      <div class="toc">${groups}</div>
+      <div class="edit-actions sticky"><button data-act="done" class="primary">Gotowe (<span id="selN">${sel.size}</span>)</button></div>`, e => {
+      const b = e.target.closest("[data-sel]");
+      if (b) { const id = b.dataset.sel; sel.has(id) ? sel.delete(id) : sel.add(id); b.classList.toggle("on"); $("#selN").textContent = sel.size; return; }
+      if (e.target.closest("[data-act=done]")) { draft.photos = [...sel]; postForm(); }
+    });
   }
 
   // zapis do photos.json w repozytorium przez API GitHuba (token tylko w tej przeglądarce)
@@ -431,19 +582,18 @@ details.team[open] summary::after{transform:rotate(-135deg)}
   const b64e = s => btoa(unescape(encodeURIComponent(s)));
   const b64d = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ""))));
   let queue = Promise.resolve();
-  function save(id, target, msg) {
-    if (!getToken()) return askToken(() => save(id, target, msg));
+  function save(fn, msg) {
+    if (!getToken()) return askToken(() => save(fn, msg));
     toast("Zapisuję…", 20000);
     queue = queue.then(async () => {
       for (let attempt = 0; attempt < 3; attempt++) {
         const r = await api("photos.json?ref=main");
-        if (r.status === 401 || r.status === 403) { try { localStorage.removeItem("kronika-token"); } catch {} toast("Token nie działa – wklej nowy."); return askToken(() => save(id, target, msg)); }
+        if (r.status === 401 || r.status === 403) { try { localStorage.removeItem("kronika-token"); } catch {} toast("Token nie działa – wklej nowy."); return askToken(() => save(fn, msg)); }
         const cur = r.ok ? await r.json() : null;
-        const data = cur ? JSON.parse(b64d(cur.content)) : {moves: {}};
-        data.moves = data.moves || {};
-        if (target) data.moves[id] = target; else delete data.moves[id];
+        const data = normEdits(cur ? JSON.parse(b64d(cur.content)) : {});
+        fn(data);
         const put = await api("photos.json", {method: "PUT", body: JSON.stringify({
-          message: `Zdjęcia: ${msg}`, branch: "main", sha: cur ? cur.sha : undefined,
+          message: `Kronikarz: ${msg}`, branch: "main", sha: cur ? cur.sha : undefined,
           content: b64e(JSON.stringify(data, null, 2) + "\n")})});
         if (put.ok) return toast(`✓ ${msg}. U wszystkich za ok. 2 min.`, 5000);
         if (put.status !== 409 && put.status !== 422) break;
@@ -453,30 +603,29 @@ details.team[open] summary::after{transform:rotate(-135deg)}
   }
 
   function askToken(then) {
-    editBox.innerHTML = `<div class="grip"></div><h4 class="edit-h">Połącz z GitHubem (jednorazowo)</h4>
+    openSheet(`<h4 class="edit-h">Połącz z GitHubem (jednorazowo)</h4>
       <ol class="edit-help"><li>Otwórz <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">tworzenie tokenu na GitHubie</a>.</li>
       <li><b>Repository access</b> → <i>Only select repositories</i> → <b>kronika-suszanie</b>.</li>
       <li><b>Permissions</b> → <b>Contents</b> → <i>Read and write</i>. Ustaw długi termin ważności.</li>
       <li>Kliknij <i>Generate token</i>, skopiuj i wklej tutaj:</li></ol>
       <input class="search" id="tokenIn" type="password" placeholder="github_pat_…" autocomplete="off">
-      <div class="edit-actions" style="margin-top:12px"><button data-act="tok" class="primary">Zapisz w tym telefonie</button></div>`;
-    editBox.onclick = e => {
+      <div class="edit-actions" style="margin-top:12px"><button data-act="tok" class="primary">Zapisz w tym telefonie</button></div>`, e => {
       if (!e.target.closest("[data-act=tok]")) return;
       const v = $("#tokenIn").value.trim(); if (!v) return;
       try { localStorage.setItem("kronika-token", v); } catch {}
       closeEdit(); then();
-    };
-    editWrap.classList.add("open");
+    });
   }
 
-  function loadMoves() {  // świeży photos.json, zanim GitHub przebuduje stronę
+  function loadEdits() {  // świeży photos.json, zanim GitHub przebuduje stronę
     if (!DEV || !getToken()) return;
     api("photos.json?ref=main").then(r => r.ok ? r.json() : null).then(f => {
-      if (f) { moves = JSON.parse(b64d(f.content)).moves || {}; refresh(); }
+      if (f) { edits = normEdits(JSON.parse(b64d(f.content))); refresh(); }
     }).catch(() => {});
   }
-  loadMoves();
+  loadEdits();
 
+  // start: rok z adresu albo najnowszy
   function fromHash() {
     const hash = decodeURIComponent(location.hash.slice(1));
     const hy = hash.split("-")[0];

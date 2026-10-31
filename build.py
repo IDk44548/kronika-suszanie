@@ -280,9 +280,10 @@ def main():
             s["blocks"] = [[k, [meta[n] for n in v] if k == "gallery" else v] for k, v in s["blocks"]]
         y["sections"] = [s for s in y["sections"] if s["blocks"]]
 
-    # ręczne przenosiny zdjęć z trybu edycji: {"moves": {id_zdjęcia: "rok|tytuł wpisu" albo "hidden"}}
+    # zmiany z trybu kronikarza: {"moves": {id_zdjęcia: "rok|tytuł" | "hidden"},
+    #   "members": {rok: {"add": [], "remove": [], "rename": {}}}, "posts": [{id, year, date, title, text, after}]}
     photos = json.loads((ROOT / "photos.json").read_text(encoding="utf-8")) if (ROOT / "photos.json").exists() else {}
-    data = {"years": years, "moves": photos.get("moves", {}), "repo": REPO,
+    data = {"years": years, "edits": photos, "repo": REPO,
             "updated": datetime.now(timezone.utc).isoformat(timespec="minutes")}
     template = (ROOT / "template.html").read_text(encoding="utf-8")
     page = template.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))

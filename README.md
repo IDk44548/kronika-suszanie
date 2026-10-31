@@ -9,7 +9,11 @@ Strona sama pobiera kronikę z Google Docs co 30 minut i się przebudowuje
 
 Lokalnie: `pip install beautifulsoup4 pillow && python build.py` → strona w `site/`.
 
-## Zdjęcia – tryb kronikarza
-5× stuknij logo (albo dodaj `?edytuj` do adresu) → hasło → klikasz zdjęcie → *Przenieś do…*, *Ukryj* albo *Przywróć*.
-Zmiany zapisują się w `photos.json` (id zdjęcia → „rok|tytuł wpisu” albo „hidden”) i są u wszystkich po ok. 2 min.
+## Tryb kronikarza
+5× stuknij logo (albo dodaj `?edytuj` do adresu) → hasło → potem:
+- **zdjęcie** → *Przenieś do…*, *Ukryj*, *Przywróć*,
+- **osoba w składzie** → popraw / usuń; *+ Dodaj osobę*,
+- **+ Nowy wpis** → rok, data, tytuł, tekst, miejsce w kronice i zdjęcia wybrane z kroniki; wpis można potem edytować i usunąć.
+
+Zmiany zapisują się w `photos.json` (Google Doc zostaje nietknięty) i są u wszystkich po ok. 2 min.
 Przy pierwszym zapisie strona poprosi o token GitHuba (Contents: read/write tylko dla tego repo) – zostaje tylko w tym telefonie.
