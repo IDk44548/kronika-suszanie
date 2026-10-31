@@ -82,6 +82,8 @@ details.team[open] summary::after{transform:rotate(-135deg)}
 .card-body{padding:4px 18px 18px}
 .card-body p{margin:10px 0 0;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
 .card-body strong{font-weight:600}
+.card.ghost{opacity:.5}
+.tag{align-self:center;font-size:12.5px;font-weight:600;color:#7a5a17;background:var(--gold-2);border-radius:8px;padding:3px 8px}
 .card.collapsed .card-body{max-height:300px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}
 .more{display:block;width:calc(100% - 36px);margin:0 18px 18px;padding:11px;border-radius:12px;background:var(--gold-2);color:#7a5a17;font-weight:600;font-size:15px}
 .gallery{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:14px}
@@ -214,7 +216,10 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     s.id = `${y.year}-${i + 1}`; s.key = `${y.year}|${s.title}`;
     s.blocks.forEach(([k, v]) => k === "gallery" && v.forEach(im => im.home = s.key));
   }));
-  const normEdits = d => ({...d, moves: d.moves || {}, members: d.members || {}, posts: d.posts || []});
+  // tryb edycji tylko dla kronikarza: hasło przy wejściu (5× stuknij logo albo adres z ?edytuj)
+  const PASS = "1234";
+  let DEV = (() => { try { return localStorage.getItem("kronika-dev") === "1"; } catch { return false; } })();
+  const normEdits = d => ({...d, moves: d.moves || {}, members: d.members || {}, posts: d.posts || [], sections: d.sections || {}});
   let edits = normEdits(DATA.edits || {}), hidden = [];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const strip = s => s.replace(/<[^>]+>/g, "");
@@ -231,6 +236,18 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       const m = edits.members[y.year]; if (!m) continue;
       y.members = y.members.filter(n => !(m.remove || []).includes(n)).map(n => (m.rename || {})[n] || n);
       for (const a of m.add || []) if (!y.members.includes(a)) y.members.push(a);
+    }
+    // poprawki wpisów z Google Docs: tytuł, data, tekst, ukrycie
+    for (const y of ys) for (const s of y.sections) {
+      const ov = edits.sections[s.key]; if (!ov) continue;
+      if (ov.title != null) s.title = ov.title;
+      if (ov.date != null) s.date = ov.date;
+      if (ov.text != null) {
+        const ims = s.blocks.filter(b => b[0] === "gallery").flatMap(b => b[1]);
+        s.blocks = [...textBlocks(ov.text), ...(ims.length ? [["gallery", ims]] : [])];
+      }
+      s.edited = true;
+      if (ov.hidden) s.hiddenEntry = true;
     }
     // nowe wpisy kronikarza
     for (const p of edits.posts) {
@@ -257,7 +274,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       const b = byKey[moves[id]].blocks, last = b[b.length - 1];
       if (last && last[0] === "gallery") last[1].push(imgs[id]); else b.push(["gallery", [imgs[id]]]);
     }
-    ys.forEach(y => y.sections = y.sections.filter(s => s.blocks.length || s.post));
+    ys.forEach(y => y.sections = y.sections.filter(s => (s.blocks.length || s.post) && (!s.hiddenEntry || DEV)));
     return ys.filter(y => y.sections.length || y.members.length);
   }
 
@@ -272,9 +289,6 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
 
   let current = null, lbImgs = [];
   renderTop();
-  // tryb edycji tylko dla kronikarza: hasło przy wejściu (5× stuknij logo albo adres z ?edytuj)
-  const PASS = "1234";
-  let DEV = (() => { try { return localStorage.getItem("kronika-dev") === "1"; } catch { return false; } })();
 
   function renderYear(y) {
     lbImgs = [];
@@ -291,9 +305,9 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     h += `<div class="timeline">` + y.sections.map(s => {
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : gallery(v)).join("");
       const len = strip(body).length, fold = len > 900 && !DEV;
-      return `<article class="entry" id="${s.id}"><div class="card${fold ? " collapsed" : ""}">
+      return `<article class="entry" id="${s.id}"><div class="card${fold ? " collapsed" : ""}${s.hiddenEntry ? " ghost" : ""}">
         <div class="card-head"><span class="date${s.date ? "" : " nodate"}">${s.date ? esc(s.date) : "✦ " + y.year}</span><h3>${esc(s.title)}</h3>
-        ${DEV && s.post ? `<div class="edit-actions" style="margin:10px 0 0"><button data-post="${s.post.id}">✎ Edytuj wpis</button></div>` : ""}</div>
+        ${DEV ? `<div class="edit-actions" style="margin:10px 0 0"><button data-entry="${esc(s.key)}">✎ Edytuj wpis</button>${s.hiddenEntry ? `<span class="tag">ukryty</span>` : s.edited ? `<span class="tag">poprawiony na stronie</span>` : ""}</div>` : ""}</div>
         <div class="card-body">${body}</div>${fold ? `<button class="more">Czytaj dalej</button>` : ""}</div></article>`;
     }).join("") + `</div>`;
     if (idx < years.length - 1) h += `<button class="next-year" data-y="${years[idx + 1].year}">Dalej: rok ${years[idx + 1].year} →</button>`;
@@ -323,8 +337,8 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     if (g) return DEV ? openEdit(g.dataset.id) : openLb(+g.dataset.i);
     const mb = e.target.closest("[data-member]");
     if (mb) { e.preventDefault(); return openMember(current.year, mb.dataset.member); }
-    const pb = e.target.closest("[data-post]");
-    if (pb) return openPost(edits.posts.find(p => p.id === pb.dataset.post));
+    const eb = e.target.closest("[data-entry]");
+    if (eb) { const s = current.sections.find(x => x.key === eb.dataset.entry); return s.post ? openPost(s.post) : openDocEntry(s); }
     const d = e.target.closest("[data-dev]");
     if (!d) return;
     if (d.dataset.dev === "hidden") openHidden();
@@ -560,6 +574,67 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     });
     editBox.querySelector("#pYear").onchange = () => { readForm(); draft.after = ""; postForm(); };
   }
+  // tekst z HTML kroniki → zwykły tekst do edycji
+  const htmlToText = blocks => blocks.filter(b => b[0] === "text").map(b => {
+    const d = document.createElement("div"); d.innerHTML = b[1].replace(/<br\s*\/?>/g, "\n"); return d.textContent.trim();
+  }).join("\n\n");
+  const baseSection = key => { for (const y of BASE) for (const s of y.sections) if (s.key === key) return s; };
+  const photosIn = s => s.blocks.filter(b => b[0] === "gallery").flatMap(b => b[1]).map(im => im.id);
+
+  function openDocEntry(s) {
+    draft = {doc: s.key, year: s.key.split("|")[0], date: s.date, title: s.title, text: htmlToText(s.blocks), photos: photosIn(s), initial: photosIn(s)};
+    docForm();
+  }
+  function docForm() {
+    const key = draft.doc, ov = edits.sections[key] || {};
+    const thumbs = draft.photos.map(id => findImg(id)).filter(Boolean);
+    openSheet(`<h4 class="edit-h">Edytuj wpis</h4>
+      <p class="edit-where"><small>Ten wpis pochodzi z Google Docs. Zmiany tutaj zmieniają tylko stronę – dokument zostaje bez zmian.
+        ${ov.text != null ? "<br><b>Uwaga:</b> tekst jest poprawiony na stronie, więc późniejsze zmiany tekstu w dokumencie nie będą tu widoczne, dopóki nie klikniesz „Przywróć wersję z dokumentu”." : ""}</small></p>
+      <div class="form">
+        <label>Data <small>(np. 12.11)</small><input id="pDate" class="search" value="${esc(draft.date)}"></label>
+        <label>Tytuł<input id="pTitle" class="search" value="${esc(draft.title)}"></label>
+        <label>Tekst <small>(pusta linijka = nowy akapit; pogrubienia z dokumentu znikną, jeśli zmienisz tekst)</small><textarea id="pText" class="search" rows="10">${esc(draft.text)}</textarea></label>
+        <div class="label">Zdjęcia (${thumbs.length})</div>
+        ${thumbs.length ? `<div class="gallery">${thumbs.map(im => `<button data-pick="${im.id}" title="Usuń z wpisu"><img src="${im.src}" alt=""><span class="x">✕</span></button>`).join("")}</div>` : ""}
+        <div class="edit-actions"><button data-act="pick">+ Wybierz zdjęcia z kroniki</button></div>
+        <div class="edit-actions">
+          ${ov.hidden ? `<button data-act="show">Pokaż wpis z powrotem</button>` : `<button data-act="hide" class="danger">Ukryj wpis</button>`}
+          ${Object.keys(ov).length ? `<button data-act="reset">Przywróć wersję z dokumentu</button>` : ""}
+        </div>
+      </div>
+      <div class="edit-actions sticky"><button data-act="save" class="primary">Zapisz</button></div>`, e => {
+      const act = e.target.closest("[data-act]"), pk = e.target.closest("[data-pick]");
+      const f = id => editBox.querySelector("#" + id);
+      const read = () => { draft.date = f("pDate").value.trim(); draft.title = f("pTitle").value.trim(); draft.text = f("pText").value; };
+      if (pk) { read(); draft.photos = draft.photos.filter(x => x !== pk.dataset.pick); return docForm(); }
+      if (!act) return;
+      read();
+      const title = draft.title || baseSection(key).title;
+      const tidy = d => { if (d.sections[key] && !Object.keys(d.sections[key]).length) delete d.sections[key]; };
+      if (act.dataset.act === "pick") return photoPicker();
+      if (act.dataset.act === "hide") return commit(d => { d.sections[key] = {...(d.sections[key] || {}), hidden: true}; }, `Ukryto wpis: ${title}`);
+      if (act.dataset.act === "show") return commit(d => { if (d.sections[key]) delete d.sections[key].hidden; tidy(d); }, `Wpis znów widoczny: ${title}`);
+      if (act.dataset.act === "reset") {
+        if (!confirm("Przywrócić tytuł, datę i tekst z Google Docs? (zdjęcia zostają jak są)")) return;
+        return commit(d => { delete d.sections[key]; }, `Przywrócono z dokumentu: ${title}`);
+      }
+      if (!draft.title) return toast("Wpisz tytuł");
+      // zapisujemy tylko to, co różni się od dokumentu – reszta dalej idzie z Google Docs
+      const orig = baseSection(key), ch = {};
+      if (draft.title !== orig.title) ch.title = draft.title;
+      if (draft.date !== orig.date) ch.date = draft.date;
+      if (draft.text.trim() !== htmlToText(orig.blocks)) ch.text = draft.text.trim();
+      const photos = [...draft.photos], initial = draft.initial;
+      commit(d => {
+        const keepHidden = d.sections[key] && d.sections[key].hidden;
+        d.sections[key] = {...ch, ...(keepHidden ? {hidden: true} : {})}; tidy(d);
+        for (const x of photos) { if (findImg(x).home === key) delete d.moves[x]; else d.moves[x] = key; }
+        for (const x of initial) if (!photos.includes(x)) { if (findImg(x).home === key) d.moves[x] = "hidden"; else delete d.moves[x]; }
+      }, `Zapisano wpis: ${draft.title}`);
+    });
+  }
+
   function photoPicker() {
     const sel = new Set(draft.photos);
     const groups = [...BASE].reverse().map(y => {
@@ -571,7 +646,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       <div class="edit-actions sticky"><button data-act="done" class="primary">Gotowe (<span id="selN">${sel.size}</span>)</button></div>`, e => {
       const b = e.target.closest("[data-sel]");
       if (b) { const id = b.dataset.sel; sel.has(id) ? sel.delete(id) : sel.add(id); b.classList.toggle("on"); $("#selN").textContent = sel.size; return; }
-      if (e.target.closest("[data-act=done]")) { draft.photos = [...sel]; postForm(); }
+      if (e.target.closest("[data-act=done]")) { draft.photos = [...sel]; draft.doc ? docForm() : postForm(); }
     });
   }
 
