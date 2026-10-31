@@ -374,7 +374,7 @@ details.team[open] summary::after{transform:rotate(-135deg)}
     };
     editBox.onclick = e => { if (e.target.closest("[data-act=pass]")) tryIt(); };
     editWrap.classList.add("open");
-    setTimeout(() => { const i = $("#passIn"); i.focus(); i.onkeydown = e => e.key === "Enter" && tryIt(); }, 300);
+    setTimeout(() => { const i = $("#passIn"); i.focus(); i.onkeydown = e => { if (e.key === "Enter") tryIt(); }; }, 300);
   }
   let taps = 0, tapT;
   $(".hero img").addEventListener("click", () => { taps++; clearTimeout(tapT); tapT = setTimeout(() => taps = 0, 1500); if (taps >= 5 && !DEV) { taps = 0; askPassword(); } });
