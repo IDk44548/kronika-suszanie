@@ -1,3 +1,13 @@
 {
-  "moves": {}
+  "moves": {},
+  "members": {
+    "2026": {
+      "add": [],
+      "remove": [],
+      "rename": {
+        "Anna Firczyk": "Anna Grzebień"
+      }
+    }
+  },
+  "posts": []
 }
