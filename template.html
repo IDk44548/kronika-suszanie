@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kronika ZPiT Suszanie</title>
+<meta name="description" content="Kronika Zespołu Pieśni i Tańca Suszanie – bale, występy, zgrupowania i wszystko, co przetańczyliśmy.">
+<meta name="theme-color" content="#2f6b3d">
+<meta name="color-scheme" content="light">
+<meta property="og:title" content="Kronika ZPiT Suszanie">
+<meta property="og:description" content="Bale, występy, zgrupowania – wszystko, co przetańczyliśmy.">
+<meta property="og:image" content="logo.png">
+<link rel="icon" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f5ee; --paper:#ffffff; --ink:#1f2a23; --muted:#66715f; --line:#e6e0d2;
+  --green:#2f6b3d; --green-2:#e7f0e6; --red:#b8352b; --gold:#c4932f; --gold-2:#fbf1da;
+  --radius:18px; --shadow:0 1px 2px rgba(31,42,35,.05),0 6px 24px rgba(31,42,35,.07);
+  --top:calc(env(safe-area-inset-top) + 0px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16.5px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:var(--green)}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:700;line-height:1.15;margin:0;letter-spacing:-.01em}
+
+/* --- hero --- */
+.hero{position:relative;text-align:center;padding:calc(env(safe-area-inset-top) + 36px) 20px 30px;
+  background:radial-gradient(120% 90% at 50% 0%,#fff 0%,#f3efe2 70%,var(--bg) 100%);overflow:hidden}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;
+  background:repeating-linear-gradient(90deg,var(--red) 0 14px,var(--gold) 14px 20px,var(--green) 20px 34px,var(--gold) 34px 40px);opacity:.85}
+.hero img{width:104px;height:auto;margin:0 auto 16px;filter:drop-shadow(0 10px 22px rgba(47,107,61,.22));mix-blend-mode:multiply}
+.hero .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--green);font-weight:600}
+.hero h1{font-size:clamp(34px,10vw,52px);margin:6px 0 4px}
+.hero p{margin:0 auto;color:var(--muted);max-width:30em}
+.hero .stats{display:flex;justify-content:center;gap:10px;margin-top:18px;flex-wrap:wrap}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:14px;color:var(--muted)}
+.stat b{color:var(--ink)}
+
+/* --- top bar --- */
+.bar{position:sticky;top:0;z-index:20;background:rgba(248,245,238,.88);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);
+  border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.bar-in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:10px 12px}
+.years{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1}
+.years::-webkit-scrollbar{display:none}
+.year-btn{flex:none;padding:8px 16px;border-radius:999px;font-weight:600;font-size:15px;color:var(--muted);background:var(--paper);border:1px solid var(--line);transition:.2s}
+.year-btn[aria-current="true"]{background:var(--green);color:#fff;border-color:var(--green);box-shadow:0 4px 14px rgba(47,107,61,.3)}
+.menu-btn{flex:none;display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--ink);color:#fff;font-weight:600;font-size:14px}
+.menu-btn svg{width:18px;height:18px}
+
+/* --- content --- */
+main{max-width:760px;margin:0 auto;padding:18px 14px 90px}
+.year-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:12px 4px 16px}
+.year-head h2{font-size:64px;color:var(--green);line-height:.9}
+.year-head span{color:var(--muted);font-size:14px;text-align:right}
+.cover{border-radius:var(--radius);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow);background:var(--paper)}
+.cover img{width:100%;height:auto;max-height:440px;object-fit:cover}
+details.team{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:4px 16px;margin-bottom:22px}
+details.team summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px 0;font-weight:600}
+details.team summary::-webkit-details-marker{display:none}
+details.team summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s;margin-right:4px}
+details.team[open] summary::after{transform:rotate(-135deg)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 16px}
+.chip{background:var(--green-2);color:#244f2f;border-radius:999px;padding:4px 11px;font-size:14px}
+
+/* timeline */
+.timeline{position:relative;padding-left:22px}
+.timeline::before{content:"";position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line),var(--line))}
+.entry{position:relative;margin-bottom:18px;scroll-margin-top:84px}
+.entry::before{content:"";position:absolute;left:-21px;top:24px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:3px solid var(--gold)}
+.card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.card-head{padding:18px 18px 6px}
+.date{display:inline-block;font-size:12.5px;font-weight:600;letter-spacing:.04em;color:var(--red);background:#fbe9e6;border-radius:8px;padding:3px 9px;margin-bottom:8px}
+.card h3{font-size:23px}
+.card-body{padding:4px 18px 18px}
+.card-body p{margin:10px 0 0;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
+.card-body strong{font-weight:600}
+.card.collapsed .card-body{max-height:300px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}
+.more{display:block;width:calc(100% - 36px);margin:0 18px 18px;padding:11px;border-radius:12px;background:var(--gold-2);color:#7a5a17;font-weight:600;font-size:15px}
+.gallery{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:14px}
+.gallery button{position:relative;border-radius:12px;overflow:hidden;background:var(--line);aspect-ratio:1}
+.gallery button img{width:100%;height:100%;object-fit:cover;transition:transform .35s}
+.gallery button:active img{transform:scale(1.04)}
+.gallery.one{grid-template-columns:1fr}
+.gallery.one button{aspect-ratio:auto}
+.gallery.one button img{height:auto;max-height:520px}
+.gallery.odd button:first-child{grid-column:1/-1;aspect-ratio:16/10}
+.gallery .plus{position:absolute;inset:0;display:grid;place-items:center;background:rgba(31,42,35,.55);color:#fff;font:700 26px Fraunces,serif}
+
+.updated{text-align:center;color:var(--muted);font-size:13.5px;margin:34px 0 0}
+.updated a{color:var(--muted)}
+.next-year{display:block;margin:26px auto 0;padding:13px 22px;border-radius:999px;background:var(--green);color:#fff;font-weight:600}
+
+/* toc drawer */
+.scrim{position:fixed;inset:0;background:rgba(31,42,35,.35);opacity:0;pointer-events:none;transition:.25s;z-index:40}
+.drawer{position:fixed;left:0;right:0;bottom:0;max-height:86vh;z-index:41;background:var(--paper);border-radius:22px 22px 0 0;
+  transform:translateY(102%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.15);
+  padding-bottom:env(safe-area-inset-bottom);max-width:760px;margin:0 auto}
+.open .scrim{opacity:1;pointer-events:auto}
+.open .drawer{transform:none}
+.drawer-top{padding:10px 16px 10px;border-bottom:1px solid var(--line)}
+.grip{width:42px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.search{width:100%;font:inherit;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);outline:none}
+.search:focus{border-color:var(--green);background:#fff}
+.toc{overflow-y:auto;padding:6px 8px 20px;-webkit-overflow-scrolling:touch}
+.toc h4{font:700 20px Fraunces,serif;color:var(--green);margin:16px 10px 4px}
+.toc a{display:flex;gap:10px;align-items:baseline;padding:10px;border-radius:10px;text-decoration:none;color:var(--ink)}
+.toc a:active,.toc a:hover{background:var(--bg)}
+.toc a small{flex:none;min-width:62px;color:var(--red);font-weight:600;font-size:13px}
+.toc .empty{padding:20px;color:var(--muted);text-align:center}
+
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:60;background:#0f1411;display:none;touch-action:pan-y}
+.lb.show{display:block}
+.lb-track{display:flex;height:100%;transition:transform .3s ease}
+.lb-slide{flex:none;width:100%;height:100%;display:grid;place-items:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.lb-slide img{max-width:100%;max-height:100%;object-fit:contain}
+.lb-ui{position:absolute;top:calc(env(safe-area-inset-top) + 10px);left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;color:#fff;font-weight:600}
+.lb-ui button,.lb-nav{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;font-size:22px}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%)}
+.lb-prev{left:12px}.lb-next{right:12px}
+@media (hover:none){.lb-nav{display:none}}
+
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;width:48px;height:48px;border-radius:50%;background:var(--paper);box-shadow:var(--shadow);border:1px solid var(--line);display:grid;place-items:center;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none}
+.fab.show{opacity:1;transform:none;pointer-events:auto}
+.fab svg{width:20px;height:20px}
+@media (min-width:700px){.card-head{padding:24px 26px 6px}.card-body{padding:4px 26px 24px}.more{width:calc(100% - 52px);margin:0 26px 24px}.gallery{grid-template-columns:repeat(3,1fr)}.gallery.odd button:first-child{grid-column:auto;aspect-ratio:1}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <img src="logo.png" alt="Logo ZPiT Suszanie">
+  <div class="kicker">Zespół Pieśni i Tańca</div>
+  <h1>Kronika Suszanie</h1>
+  <p>Bale, występy, zgrupowania i wszystko, co razem przetańczyliśmy.</p>
+  <div class="stats" id="stats"></div>
+</header>
+<nav class="bar"><div class="bar-in">
+  <div class="years" id="years" role="tablist"></div>
+  <button class="menu-btn" id="menuBtn" aria-label="Spis treści"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Spis</button>
+</div></nav>
+<main id="main"></main>
+
+<div id="tocWrap">
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" aria-label="Spis treści">
+    <div class="drawer-top"><div class="grip"></div><input class="search" id="search" type="search" placeholder="Szukaj: bal, Rzeszów, zgrupowanie…" autocomplete="off"></div>
+    <div class="toc" id="toc"></div>
+  </aside>
+</div>
+
+<div class="lb" id="lb" aria-hidden="true">
+  <div class="lb-track" id="lbTrack"></div>
+  <div class="lb-ui"><span id="lbCount"></span><button id="lbClose" aria-label="Zamknij">✕</button></div>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Poprzednie">‹</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Następne">›</button>
+</div>
+<button class="fab" id="fab" aria-label="Do góry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+
+<script>const DATA=/*__DATA__*/null;</script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const years = DATA.years;
+  const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const strip = s => s.replace(/<[^>]+>/g, "");
+  const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l");
+  years.forEach(y => y.sections.forEach((s, i) => s.id = `${y.year}-${i + 1}`));
+
+  // statystyki
+  const nSec = years.reduce((a, y) => a + y.sections.length, 0);
+  const nImg = years.reduce((a, y) => a + y.sections.reduce((b, s) => b + s.blocks.filter(x => x[0] === "gallery").reduce((c, g) => c + g[1].length, 0), 0), 0);
+  $("#stats").innerHTML = `<span class="stat"><b>${years.length}</b> ${years.length === 1 ? "rok" : "lata"}</span><span class="stat"><b>${nSec}</b> wpisów</span><span class="stat"><b>${nImg}</b> zdjęć</span>`;
+
+  // zakładki lat
+  $("#years").innerHTML = years.map(y => `<button class="year-btn" role="tab" data-y="${y.year}">${y.year || "Kronika"}</button>`).join("");
+  $("#years").addEventListener("click", e => { const b = e.target.closest(".year-btn"); if (b) go(b.dataset.y, true); });
+
+  let current = null, lbImgs = [];
+
+  function renderYear(y) {
+    lbImgs = [];
+    const idx = years.indexOf(y);
+    const gallery = imgs => {
+      const start = lbImgs.length; lbImgs.push(...imgs);
+      const show = imgs.slice(0, 5), cls = imgs.length === 1 ? "one" : (show.length % 2 ? "odd" : "");
+      return `<div class="gallery ${cls}">${show.map((im, i) =>
+        `<button data-i="${start + i}" aria-label="Powiększ zdjęcie"><img src="${im.src}" width="${im.w}" height="${im.h}" loading="lazy" decoding="async" alt="">${i === 4 && imgs.length > 5 ? `<span class="plus">+${imgs.length - 5}</span>` : ""}</button>`).join("")}</div>`;
+    };
+    let h = `<div class="year-head"><h2>${y.year}</h2><span>${y.sections.length} wpisów</span></div>`;
+    if (y.members.length) h += `<details class="team"><summary>Skład zespołu · ${y.members.length} osób</summary><div class="chips">${y.members.map(m => `<span class="chip">${esc(m)}</span>`).join("")}</div></details>`;
+    h += `<div class="timeline">` + y.sections.map(s => {
+      const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : gallery(v)).join("");
+      const len = strip(body).length;
+      return `<article class="entry" id="${s.id}"><div class="card${len > 900 ? " collapsed" : ""}">
+        <div class="card-head">${s.date ? `<span class="date">${esc(s.date)}</span>` : ""}<h3>${esc(s.title)}</h3></div>
+        <div class="card-body">${body}</div>${len > 900 ? `<button class="more">Czytaj dalej</button>` : ""}</div></article>`;
+    }).join("") + `</div>`;
+    if (idx < years.length - 1) h += `<button class="next-year" data-y="${years[idx + 1].year}">Dalej: rok ${years[idx + 1].year} →</button>`;
+    else if (idx > 0) h += `<button class="next-year" data-y="${years[0].year}">← Wróć do roku ${years[0].year}</button>`;
+    h += `<p class="updated">Kronikarz: Filip Jiravský · aktualizacja ${new Date(DATA.updated).toLocaleString("pl-PL", {day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit"})}<br><a href="https://www.facebook.com/Suszanie" target="_blank" rel="noopener">Facebook</a> · <a href="https://www.instagram.com/zpitsuszanie/" target="_blank" rel="noopener">Instagram</a></p>`;
+    $("#main").innerHTML = h;
+  }
+
+  function go(year, scrollTop, sectionId) {
+    const y = years.find(x => x.year === year) || years[years.length - 1];
+    if (current !== y) { current = y; renderYear(y); }
+    document.querySelectorAll(".year-btn").forEach(b => {
+      const on = b.dataset.y === y.year; b.setAttribute("aria-current", on);
+      if (on) b.scrollIntoView({inline: "center", block: "nearest"});
+    });
+    history.replaceState(null, "", "#" + (sectionId || y.year));
+    if (sectionId) requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({behavior: "smooth"}));
+    else if (scrollTop) window.scrollTo({top: $("#main").offsetTop - 60, behavior: "smooth"});
+  }
+
+  $("#main").addEventListener("click", e => {
+    const more = e.target.closest(".more");
+    if (more) { more.previousElementSibling.parentElement.classList.remove("collapsed"); more.remove(); return; }
+    const ny = e.target.closest(".next-year");
+    if (ny) return go(ny.dataset.y, true);
+    const g = e.target.closest(".gallery button");
+    if (g) openLb(+g.dataset.i);
+  });
+
+  // spis treści
+  const tocWrap = $("#tocWrap");
+  function renderToc(q = "") {
+    const nq = norm(q.trim());
+    let h = "";
+    for (const y of [...years].reverse()) {
+      const items = y.sections.filter(s => !nq || norm(s.title + " " + s.date + " " + strip(s.blocks.filter(b => b[0] === "text").map(b => b[1]).join(" "))).includes(nq));
+      if (items.length) h += `<h4>${y.year}</h4>` + items.map(s => `<a href="#${s.id}" data-y="${y.year}" data-s="${s.id}"><small>${esc(s.date || "•")}</small><span>${esc(s.title)}</span></a>`).join("");
+    }
+    $("#toc").innerHTML = h || `<div class="empty">Nic nie znaleziono 🤷</div>`;
+  }
+  const openToc = () => { renderToc($("#search").value); tocWrap.classList.add("open"); };
+  const closeToc = () => tocWrap.classList.remove("open");
+  $("#menuBtn").onclick = openToc;
+  $("#scrim").onclick = closeToc;
+  $("#search").oninput = e => renderToc(e.target.value);
+  $("#toc").addEventListener("click", e => { const a = e.target.closest("a"); if (!a) return; e.preventDefault(); closeToc(); go(a.dataset.y, false, a.dataset.s); });
+  let ty0 = null;
+  $(".drawer-top").addEventListener("touchstart", e => ty0 = e.touches[0].clientY, {passive: true});
+  $(".drawer-top").addEventListener("touchend", e => { if (ty0 !== null && e.changedTouches[0].clientY - ty0 > 60) closeToc(); ty0 = null; });
+
+  // galeria pełnoekranowa
+  const lb = $("#lb"), track = $("#lbTrack");
+  let li = 0;
+  function openLb(i) {
+    track.innerHTML = lbImgs.map(im => `<div class="lb-slide"><img data-src="${im.src}" alt=""></div>`).join("");
+    lb.classList.add("show"); lb.setAttribute("aria-hidden", "false"); document.body.style.overflow = "hidden";
+    show(i, false);
+  }
+  function show(i, anim = true) {
+    li = Math.max(0, Math.min(lbImgs.length - 1, i));
+    track.style.transition = anim ? "" : "none";
+    track.style.transform = `translateX(${-li * 100}%)`;
+    [li - 1, li, li + 1].forEach(k => { const im = track.children[k]?.querySelector("img"); if (im && !im.src) im.src = im.dataset.src; });
+    $("#lbCount").textContent = `${li + 1} / ${lbImgs.length}`;
+  }
+  function closeLb() { lb.classList.remove("show"); lb.setAttribute("aria-hidden", "true"); document.body.style.overflow = ""; }
+  $("#lbClose").onclick = closeLb;
+  $("#lbPrev").onclick = () => show(li - 1);
+  $("#lbNext").onclick = () => show(li + 1);
+  let sx = null, sy = null, dx = 0;
+  lb.addEventListener("touchstart", e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; track.style.transition = "none"; }, {passive: true});
+  lb.addEventListener("touchmove", e => { if (sx === null) return; dx = e.touches[0].clientX - sx; track.style.transform = `translateX(calc(${-li * 100}% + ${dx}px))`; }, {passive: true});
+  lb.addEventListener("touchend", e => {
+    if (sx === null) return;
+    const dy = e.changedTouches[0].clientY - sy; sx = null; track.style.transition = "";
+    if (Math.abs(dy) > 110 && Math.abs(dy) > Math.abs(dx)) return closeLb();
+    show(dx < -50 ? li + 1 : dx > 50 ? li - 1 : li);
+  });
+  document.addEventListener("keydown", e => {
+    if (lb.classList.contains("show")) { if (e.key === "Escape") closeLb(); if (e.key === "ArrowLeft") show(li - 1); if (e.key === "ArrowRight") show(li + 1); }
+    else if (e.key === "Escape") closeToc();
+  });
+
+  // przycisk do góry
+  const fab = $("#fab");
+  addEventListener("scroll", () => fab.classList.toggle("show", scrollY > 900), {passive: true});
+  fab.onclick = () => scrollTo({top: 0, behavior: "smooth"});
+
+  // start: rok z adresu albo najnowszy
+  function fromHash() {
+    const hash = decodeURIComponent(location.hash.slice(1));
+    const hy = hash.split("-")[0];
+    go(years.some(y => y.year === hy) ? hy : years[years.length - 1].year, false, hash.includes("-") ? hash : null);
+  }
+  addEventListener("hashchange", fromHash);
+  fromHash();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+name: Aktualizuj kronikę
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # co pół godziny pobiera Google Doca
+  workflow_dispatch:          # przycisk "Run workflow" = aktualizacja od razu
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install beautifulsoup4 pillow
+      - run: python build.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+      # GitHub wyłącza harmonogram po 60 dniach bez zmian w repo – to go podtrzymuje
+      - uses: liskin/gh-workflow-keepalive@v1

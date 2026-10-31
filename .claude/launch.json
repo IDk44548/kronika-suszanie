@@ -1,0 +1,1 @@
+{"version":"0.0.1","configurations":[{"name":"kronika","runtimeExecutable":"python","runtimeArgs":["-m","http.server","9241","-d","site"],"port":9241}]}
