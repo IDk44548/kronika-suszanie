@@ -77,6 +77,7 @@ details.team[open] summary::after{transform:rotate(-135deg)}
 .card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 .card-head{padding:18px 18px 6px}
 .date{display:inline-block;font-size:12.5px;font-weight:600;letter-spacing:.04em;color:var(--red);background:#fbe9e6;border-radius:8px;padding:3px 9px;margin-bottom:8px}
+.date.nodate{color:#7a5a17;background:var(--gold-2)}
 .card h3{font-size:23px}
 .card-body{padding:4px 18px 18px}
 .card-body p{margin:10px 0 0;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
@@ -199,7 +200,7 @@ details.team[open] summary::after{transform:rotate(-135deg)}
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : gallery(v)).join("");
       const len = strip(body).length;
       return `<article class="entry" id="${s.id}"><div class="card${len > 900 ? " collapsed" : ""}">
-        <div class="card-head">${s.date ? `<span class="date">${esc(s.date)}</span>` : ""}<h3>${esc(s.title)}</h3></div>
+        <div class="card-head"><span class="date${s.date ? "" : " nodate"}">${s.date ? esc(s.date) : "✦ " + y.year}</span><h3>${esc(s.title)}</h3></div>
         <div class="card-body">${body}</div>${len > 900 ? `<button class="more">Czytaj dalej</button>` : ""}</div></article>`;
     }).join("") + `</div>`;
     if (idx < years.length - 1) h += `<button class="next-year" data-y="${years[idx + 1].year}">Dalej: rok ${years[idx + 1].year} →</button>`;
@@ -236,7 +237,7 @@ details.team[open] summary::after{transform:rotate(-135deg)}
     let h = "";
     for (const y of [...years].reverse()) {
       const items = y.sections.filter(s => !nq || norm(s.title + " " + s.date + " " + strip(s.blocks.filter(b => b[0] === "text").map(b => b[1]).join(" "))).includes(nq));
-      if (items.length) h += `<h4>${y.year}</h4>` + items.map(s => `<a href="#${s.id}" data-y="${y.year}" data-s="${s.id}"><small>${esc(s.date || "•")}</small><span>${esc(s.title)}</span></a>`).join("");
+      if (items.length) h += `<h4>${y.year}</h4>` + items.map(s => `<a href="#${s.id}" data-y="${y.year}" data-s="${s.id}"><small>${s.date ? esc(s.date) : "✦"}</small><span>${esc(s.title)}</span></a>`).join("");
     }
     $("#toc").innerHTML = h || `<div class="empty">Nic nie znaleziono 🤷</div>`;
   }

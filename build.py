@@ -179,30 +179,40 @@ class Parser:
         elif is_heading and plain:
             self.new_section(plain)
         elif plain:
-            # nagłówek = pogrubiony początek akapitu (do pierwszego <br> lub zwykłego tekstu)
-            while lines and not "".join(r[2] for r in lines[0]).replace(" ", " ").strip():
-                lines.pop(0)
-            first = lines[0]
-            i = 0
-            while i < len(first) and (first[i][1] or not first[i][2].strip()):
-                i += 1
-            head_text = "".join(r[2] for r in first[:i]).replace(" ", " ").strip()
+            # nagłówek = pogrubiony początek linijki (akapitu albo po <br>), np. „11.01 Bal gminny”
             in_intro = self.cur_year is not None and self.cur_sec is None and not self.cur_year["sections"]
-            if (head_text and len(head_text) <= 110 and (i == len(first) or DATE_RE.match(head_text))
-                    and not (in_intro and self.looks_like_members(lines))):
-                self.new_section(head_text.rstrip(":").strip())
-                lines = ([first[i:]] if first[i:] else []) + lines[1:]
-            paras, buf = [], []
+            members = in_intro and self.looks_like_members(lines)
+            buf = []
+
+            def flush():
+                if buf:
+                    self.add_block("text", "<br>".join(buf))
+                    buf.clear()
+
+            started = False
             for line in lines:
+                if not "".join(r[2] for r in line).replace(" ", " ").strip():
+                    if started:
+                        flush()
+                    continue
+                i = 0
+                while i < len(line) and (line[i][1] or not line[i][2].strip()):
+                    i += 1
+                head = "".join(r[2] for r in line[:i]).replace(" ", " ").strip()
+                if not started:  # pierwsza linijka akapitu – luźniejsza reguła
+                    ok = head and len(head) <= 110 and (i == len(line) or DATE_RE.match(head)
+                                                       or (len(head) <= 70 and head[-1] not in ".,!?…:;"))
+                else:  # w środku akapitu – tylko data albo cała linijka pogrubiona
+                    ok = head and len(head) <= 90 and (DATE_RE.match(head) or (i == len(line) and len(head) <= 70))
+                started = True
+                if ok and not members:
+                    flush()
+                    self.new_section(head.rstrip(":").strip())
+                    line = line[i:]
                 txt = self.render(line)
                 if txt:
                     buf.append(txt)
-                elif buf:
-                    paras.append("<br>".join(buf)); buf = []
-            if buf:
-                paras.append("<br>".join(buf))
-            for p in paras:
-                self.add_block("text", p)
+            flush()
         for src in self.pending_imgs:
             name = src.split("/")[-1]
             if name in self.images:
