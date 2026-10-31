@@ -3,7 +3,9 @@
   "members": {
     "2026": {
       "add": [],
-      "remove": [],
+      "remove": [
+        "Agnieszka Polok"
+      ],
       "rename": {
         "Anna Firczyk": "Anna Grzebień"
       }
