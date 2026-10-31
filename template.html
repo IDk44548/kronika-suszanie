@@ -235,7 +235,7 @@ details.team[open] summary::after{transform:rotate(-135deg)}
   let current = null, lbImgs = [];
   // tryb edycji tylko dla kronikarza: hasło przy wejściu (5× stuknij logo albo adres z ?edytuj)
   const PASS = "1234";
-  const DEV = (() => { try { return localStorage.getItem("kronika-dev") === "1"; } catch { return false; } })();
+  let DEV = (() => { try { return localStorage.getItem("kronika-dev") === "1"; } catch { return false; } })();
 
   function renderYear(y) {
     lbImgs = [];
@@ -283,7 +283,7 @@ details.team[open] summary::after{transform:rotate(-135deg)}
     if (g) DEV ? openEdit(g.dataset.id) : openLb(+g.dataset.i);
     const d = e.target.closest("[data-dev]");
     if (d && d.dataset.dev === "hidden") openHidden();
-    if (d && d.dataset.dev === "off") { try { localStorage.removeItem("kronika-dev"); } catch {} location.href = location.pathname + location.hash; }
+    if (d && d.dataset.dev === "off") { try { localStorage.removeItem("kronika-dev"); } catch {} DEV = false; refresh(); }
   });
 
   // spis treści
@@ -368,7 +368,9 @@ details.team[open] summary::after{transform:rotate(-135deg)}
     const tryIt = () => {
       if ($("#passIn").value.trim() !== PASS) { toast("Złe hasło"); return; }
       try { localStorage.setItem("kronika-dev", "1"); } catch {}
-      location.href = location.pathname + location.hash;
+      DEV = true; closeEdit(); refresh(); loadMoves();
+      history.replaceState(null, "", location.pathname + location.hash);
+      toast("Tryb kronikarza włączony");
     };
     editBox.onclick = e => { if (e.target.closest("[data-act=pass]")) tryIt(); };
     editWrap.classList.add("open");
@@ -467,11 +469,13 @@ details.team[open] summary::after{transform:rotate(-135deg)}
     editWrap.classList.add("open");
   }
 
-  if (DEV && getToken()) {  // świeży photos.json, zanim GitHub przebuduje stronę
+  function loadMoves() {  // świeży photos.json, zanim GitHub przebuduje stronę
+    if (!DEV || !getToken()) return;
     api("photos.json?ref=main").then(r => r.ok ? r.json() : null).then(f => {
       if (f) { moves = JSON.parse(b64d(f.content)).moves || {}; refresh(); }
     }).catch(() => {});
   }
+  loadMoves();
 
   function fromHash() {
     const hash = decodeURIComponent(location.hash.slice(1));
