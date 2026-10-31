@@ -128,6 +128,24 @@ details.team[open] summary::after{transform:rotate(-135deg)}
 .lb-prev{left:12px}.lb-next{right:12px}
 @media (hover:none){.lb-nav{display:none}}
 
+/* tryb edycji */
+.dev-bar{background:#fff7e0;border:1px dashed var(--gold);border-radius:14px;padding:12px 14px;margin:6px 0 4px;font-size:14px;display:grid;gap:4px}
+.dev-bar div{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.dev-bar button,.edit-actions button{padding:9px 14px;border-radius:10px;background:var(--paper);border:1px solid var(--line);font-weight:600;font-size:14px}
+.edit-actions button.primary{background:var(--green);color:#fff;border-color:var(--green)}
+#editBox{padding:10px 16px 0;overflow-y:auto}
+.edit-prev{width:100%;max-height:34vh;object-fit:contain;border-radius:12px;background:var(--bg)}
+.edit-where{margin:10px 2px 8px;font-size:15px}
+.edit-where small{color:var(--muted)}
+.edit-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.edit-list{padding:4px 0 24px}
+.edit-list a.here{background:var(--green-2)}
+.edit-h{font:700 20px Fraunces,serif;color:var(--green);margin:4px 0 10px}
+.edit-help{padding-left:20px;font-size:14.5px;margin:0 0 12px}
+#editBox .empty{padding:20px;color:var(--muted);text-align:center}
+#editBox .gallery{margin-bottom:24px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);z-index:70;background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;font-size:14.5px;opacity:0;pointer-events:none;transition:.25s;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
 .fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;width:48px;height:48px;border-radius:50%;background:var(--paper);box-shadow:var(--shadow);border:1px solid var(--line);display:grid;place-items:center;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none}
 .fab.show{opacity:1;transform:none;pointer-events:auto}
 .fab svg{width:20px;height:20px}
@@ -156,6 +174,12 @@ details.team[open] summary::after{transform:rotate(-135deg)}
   </aside>
 </div>
 
+<div id="editWrap">
+  <div class="scrim" id="editScrim"></div>
+  <aside class="drawer" id="editBox" aria-label="Edycja zdjęcia"></aside>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
 <div class="lb" id="lb" aria-hidden="true">
   <div class="lb-track" id="lbTrack"></div>
   <div class="lb-ui"><span id="lbCount"></span><button id="lbClose" aria-label="Zamknij">✕</button></div>
@@ -168,11 +192,36 @@ details.team[open] summary::after{transform:rotate(-135deg)}
 <script>
 (() => {
   const $ = s => document.querySelector(s);
-  const years = DATA.years;
+  // BASE = kronika jak w Google Docs; years = po ręcznych przenosinach zdjęć (DATA.moves)
+  const BASE = DATA.years;
+  BASE.forEach(y => y.sections.forEach((s, i) => {
+    s.id = `${y.year}-${i + 1}`; s.key = `${y.year}|${s.title}`;
+    s.blocks.forEach(([k, v]) => k === "gallery" && v.forEach(im => im.home = s.key));
+  }));
+  let moves = {...(DATA.moves || {})}, hidden = [];
+  let years = materialize();
+
+  function materialize() {
+    const ys = BASE.map(y => ({...y, sections: y.sections.map(s => ({...s, blocks: s.blocks.map(([k, v]) => [k, k === "gallery" ? [...v] : v])}))}));
+    const byKey = {}, imgs = {};
+    ys.forEach(y => y.sections.forEach(s => { byKey[s.key] = s; s.blocks.forEach(([k, v]) => k === "gallery" && v.forEach(im => imgs[im.id] = im)); }));
+    const moving = Object.keys(moves).filter(id => imgs[id] && (moves[id] === "hidden" || byKey[moves[id]]));
+    const out = new Set(moving);
+    ys.forEach(y => y.sections.forEach(s => {
+      s.blocks = s.blocks.map(([k, v]) => [k, k === "gallery" ? v.filter(im => !out.has(im.id)) : v]).filter(([k, v]) => k !== "gallery" || v.length);
+    }));
+    hidden = [];
+    for (const id of moving) {
+      if (moves[id] === "hidden") { hidden.push(imgs[id]); continue; }
+      const b = byKey[moves[id]].blocks, last = b[b.length - 1];
+      if (last && last[0] === "gallery") last[1].push(imgs[id]); else b.push(["gallery", [imgs[id]]]);
+    }
+    ys.forEach(y => y.sections = y.sections.filter(s => s.blocks.length));
+    return ys;
+  }
   const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const strip = s => s.replace(/<[^>]+>/g, "");
   const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l");
-  years.forEach(y => y.sections.forEach((s, i) => s.id = `${y.year}-${i + 1}`));
 
   // statystyki
   const nSec = years.reduce((a, y) => a + y.sections.length, 0);
@@ -184,17 +233,21 @@ details.team[open] summary::after{transform:rotate(-135deg)}
   $("#years").addEventListener("click", e => { const b = e.target.closest(".year-btn"); if (b) go(b.dataset.y, true); });
 
   let current = null, lbImgs = [];
+  // tryb edycji tylko dla kronikarza: hasło przy wejściu (5× stuknij logo albo adres z ?edytuj)
+  const PASS = "1234";
+  const DEV = (() => { try { return localStorage.getItem("kronika-dev") === "1"; } catch { return false; } })();
 
   function renderYear(y) {
     lbImgs = [];
     const idx = years.indexOf(y);
     const gallery = imgs => {
       const start = lbImgs.length; lbImgs.push(...imgs);
-      const show = imgs.slice(0, 5), cls = imgs.length === 1 ? "one" : (show.length % 2 ? "odd" : "");
+      const show = DEV ? imgs : imgs.slice(0, 5), cls = imgs.length === 1 ? "one" : (show.length % 2 ? "odd" : "");
       return `<div class="gallery ${cls}">${show.map((im, i) =>
-        `<button data-i="${start + i}" aria-label="Powiększ zdjęcie"><img src="${im.src}" width="${im.w}" height="${im.h}" loading="lazy" decoding="async" alt="">${i === 4 && imgs.length > 5 ? `<span class="plus">+${imgs.length - 5}</span>` : ""}</button>`).join("")}</div>`;
+        `<button data-i="${start + i}" data-id="${im.id}" aria-label="Powiększ zdjęcie"><img src="${im.src}" width="${im.w}" height="${im.h}" loading="lazy" decoding="async" alt="">${i === 4 && imgs.length > 5 ? `<span class="plus">+${imgs.length - 5}</span>` : ""}</button>`).join("")}</div>`;
     };
-    let h = `<div class="year-head"><h2>${y.year}</h2><span>${y.sections.length} wpisów</span></div>`;
+    let h = DEV ? `<div class="dev-bar"><b>✎ Tryb edycji zdjęć</b><span>Kliknij zdjęcie, żeby je przenieść albo ukryć.</span><div><button data-dev="hidden">Ukryte (${hidden.length})</button><button data-dev="off">Wyłącz edycję</button></div></div>` : "";
+    h += `<div class="year-head"><h2>${y.year}</h2><span>${y.sections.length} wpisów</span></div>`;
     if (y.members.length) h += `<details class="team"><summary>Skład zespołu · ${y.members.length} osób</summary><div class="chips">${y.members.map(m => `<span class="chip">${esc(m)}</span>`).join("")}</div></details>`;
     h += `<div class="timeline">` + y.sections.map(s => {
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : gallery(v)).join("");
@@ -227,7 +280,10 @@ details.team[open] summary::after{transform:rotate(-135deg)}
     const ny = e.target.closest(".next-year");
     if (ny) return go(ny.dataset.y, true);
     const g = e.target.closest(".gallery button");
-    if (g) openLb(+g.dataset.i);
+    if (g) DEV ? openEdit(g.dataset.id) : openLb(+g.dataset.i);
+    const d = e.target.closest("[data-dev]");
+    if (d && d.dataset.dev === "hidden") openHidden();
+    if (d && d.dataset.dev === "off") { try { localStorage.removeItem("kronika-dev"); } catch {} location.href = location.pathname + location.hash; }
   });
 
   // spis treści
@@ -290,6 +346,133 @@ details.team[open] summary::after{transform:rotate(-135deg)}
   fab.onclick = () => scrollTo({top: 0, behavior: "smooth"});
 
   // start: rok z adresu albo najnowszy
+  // --- tryb edycji zdjęć ---------------------------------------------------
+  function refresh() {
+    const y = current && current.year, sy = scrollY;
+    years = materialize(); current = null;
+    const cy = years.find(x => x.year === y);
+    if (cy) { current = cy; renderYear(cy); scrollTo(0, sy); }
+  }
+  const toast = (msg, ms = 3500) => { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), ms); };
+  const editWrap = $("#editWrap"), editBox = $("#editBox");
+  const closeEdit = () => editWrap.classList.remove("open");
+  $("#editScrim").onclick = closeEdit;
+  const findImg = id => { for (const y of BASE) for (const s of y.sections) for (const [k, v] of s.blocks) if (k === "gallery") { const im = v.find(x => x.id === id); if (im) return im; } };
+  const placeOf = id => { for (const y of years) for (const s of y.sections) for (const [k, v] of s.blocks) if (k === "gallery" && v.some(x => x.id === id)) return s; };
+  const titleOf = key => key.split("|").slice(1).join("|");
+
+  function askPassword() {
+    editBox.innerHTML = `<div class="grip"></div><h4 class="edit-h">Tryb kronikarza</h4>
+      <input class="search" id="passIn" type="password" inputmode="numeric" placeholder="Hasło" autocomplete="off">
+      <div class="edit-actions" style="margin-top:12px"><button data-act="pass" class="primary">Wejdź</button></div>`;
+    const tryIt = () => {
+      if ($("#passIn").value.trim() !== PASS) { toast("Złe hasło"); return; }
+      try { localStorage.setItem("kronika-dev", "1"); } catch {}
+      location.href = location.pathname + location.hash;
+    };
+    editBox.onclick = e => { if (e.target.closest("[data-act=pass]")) tryIt(); };
+    editWrap.classList.add("open");
+    setTimeout(() => { const i = $("#passIn"); i.focus(); i.onkeydown = e => e.key === "Enter" && tryIt(); }, 300);
+  }
+  let taps = 0, tapT;
+  $(".hero img").addEventListener("click", () => { taps++; clearTimeout(tapT); tapT = setTimeout(() => taps = 0, 1500); if (taps >= 5 && !DEV) { taps = 0; askPassword(); } });
+  if (!DEV && new URLSearchParams(location.search).has("edytuj")) askPassword();
+
+  function openEdit(id) {
+    const im = findImg(id), place = placeOf(id), isHidden = moves[id] === "hidden";
+    const moved = moves[id] && moves[id] !== im.home;
+    editBox.innerHTML = `<div class="grip"></div>
+      <img class="edit-prev" src="${im.src}" alt="">
+      <p class="edit-where">${isHidden ? "Zdjęcie jest <b>ukryte</b>." : `Teraz w: <b>${esc(place ? place.title : "?")}</b>`}${moved ? `<br><small>Oryginalnie: ${esc(titleOf(im.home))}</small>` : ""}</p>
+      <div class="edit-actions">
+        ${isHidden ? `<button data-act="show">Pokaż z powrotem</button>` : `<button data-act="hide">Ukryj zdjęcie</button>`}
+        ${moved ? `<button data-act="home">Przywróć na oryginalne miejsce</button>` : ""}
+      </div>
+      <input class="search" id="editSearch" type="search" placeholder="Przenieś do… (szukaj wpisu)" autocomplete="off">
+      <div class="toc edit-list" id="editList"></div>`;
+    const list = q => {
+      const nq = norm(q.trim());
+      $("#editList").innerHTML = [...BASE].reverse().map(y => {
+        const it = y.sections.filter(s => !nq || norm(s.title + " " + s.date).includes(nq));
+        return it.length ? `<h4>${y.year}</h4>` + it.map(s => `<a href="#" data-to="${esc(s.key)}"${place && place.key === s.key ? ` class="here"` : ""}><small>${s.date ? esc(s.date) : "✦"}</small><span>${esc(s.title)}</span></a>`).join("") : "";
+      }).join("") || `<div class="empty">Nic nie znaleziono</div>`;
+    };
+    list("");
+    $("#editSearch").oninput = e => list(e.target.value);
+    editBox.onclick = e => {
+      const a = e.target.closest("[data-to]"), act = e.target.closest("[data-act]");
+      if (a) { e.preventDefault(); setMove(id, a.dataset.to, `Przeniesiono do: ${titleOf(a.dataset.to)}`); }
+      else if (act) setMove(id, act.dataset.act === "hide" ? "hidden" : im.home, act.dataset.act === "hide" ? "Zdjęcie ukryte" : "Zdjęcie wróciło na miejsce");
+    };
+    editWrap.classList.add("open");
+  }
+
+  function openHidden() {
+    editBox.innerHTML = `<div class="grip"></div><h4 class="edit-h">Ukryte zdjęcia</h4>` + (hidden.length
+      ? `<div class="gallery">${hidden.map(im => `<button data-hid="${im.id}"><img src="${im.src}" alt=""></button>`).join("")}</div>`
+      : `<div class="empty">Brak ukrytych zdjęć</div>`);
+    editBox.onclick = e => { const b = e.target.closest("[data-hid]"); if (b) openEdit(b.dataset.hid); };
+    editWrap.classList.add("open");
+  }
+
+  function setMove(id, target, msg) {
+    const im = findImg(id);
+    if (target === im.home) delete moves[id]; else moves[id] = target;
+    closeEdit(); refresh();
+    save(id, moves[id] || null, msg);
+  }
+
+  // zapis do photos.json w repozytorium przez API GitHuba (token tylko w tej przeglądarce)
+  const getToken = () => { try { return localStorage.getItem("kronika-token"); } catch { return null; } };
+  const api = (path, opt = {}) => fetch(`https://api.github.com/repos/${DATA.repo}/contents/${path}`, {...opt, cache: "no-store",
+    headers: {Authorization: `Bearer ${getToken()}`, Accept: "application/vnd.github+json", ...(opt.headers || {})}});
+  const b64e = s => btoa(unescape(encodeURIComponent(s)));
+  const b64d = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ""))));
+  let queue = Promise.resolve();
+  function save(id, target, msg) {
+    if (!getToken()) return askToken(() => save(id, target, msg));
+    toast("Zapisuję…", 20000);
+    queue = queue.then(async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const r = await api("photos.json?ref=main");
+        if (r.status === 401 || r.status === 403) { try { localStorage.removeItem("kronika-token"); } catch {} toast("Token nie działa – wklej nowy."); return askToken(() => save(id, target, msg)); }
+        const cur = r.ok ? await r.json() : null;
+        const data = cur ? JSON.parse(b64d(cur.content)) : {moves: {}};
+        data.moves = data.moves || {};
+        if (target) data.moves[id] = target; else delete data.moves[id];
+        const put = await api("photos.json", {method: "PUT", body: JSON.stringify({
+          message: `Zdjęcia: ${msg}`, branch: "main", sha: cur ? cur.sha : undefined,
+          content: b64e(JSON.stringify(data, null, 2) + "\n")})});
+        if (put.ok) return toast(`✓ ${msg}. U wszystkich za ok. 2 min.`, 5000);
+        if (put.status !== 409 && put.status !== 422) break;
+      }
+      toast("Nie udało się zapisać – spróbuj jeszcze raz.", 6000);
+    }).catch(() => toast("Brak internetu – nie zapisano.", 6000));
+  }
+
+  function askToken(then) {
+    editBox.innerHTML = `<div class="grip"></div><h4 class="edit-h">Połącz z GitHubem (jednorazowo)</h4>
+      <ol class="edit-help"><li>Otwórz <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">tworzenie tokenu na GitHubie</a>.</li>
+      <li><b>Repository access</b> → <i>Only select repositories</i> → <b>kronika-suszanie</b>.</li>
+      <li><b>Permissions</b> → <b>Contents</b> → <i>Read and write</i>. Ustaw długi termin ważności.</li>
+      <li>Kliknij <i>Generate token</i>, skopiuj i wklej tutaj:</li></ol>
+      <input class="search" id="tokenIn" type="password" placeholder="github_pat_…" autocomplete="off">
+      <div class="edit-actions" style="margin-top:12px"><button data-act="tok" class="primary">Zapisz w tym telefonie</button></div>`;
+    editBox.onclick = e => {
+      if (!e.target.closest("[data-act=tok]")) return;
+      const v = $("#tokenIn").value.trim(); if (!v) return;
+      try { localStorage.setItem("kronika-token", v); } catch {}
+      closeEdit(); then();
+    };
+    editWrap.classList.add("open");
+  }
+
+  if (DEV && getToken()) {  // świeży photos.json, zanim GitHub przebuduje stronę
+    api("photos.json?ref=main").then(r => r.ok ? r.json() : null).then(f => {
+      if (f) { moves = JSON.parse(b64d(f.content)).moves || {}; refresh(); }
+    }).catch(() => {});
+  }
+
   function fromHash() {
     const hash = decodeURIComponent(location.hash.slice(1));
     const hy = hash.split("-")[0];

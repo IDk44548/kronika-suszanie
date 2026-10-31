@@ -21,6 +21,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 from PIL import Image, ImageOps
 
 DOC_ID = "1-WabgJuRqsgB8YhJ2iRPlvKM6vWO6GXjR6vs1TGm-bc"
+REPO = "IDk44548/kronika-suszanie"
 ROOT = Path(__file__).parent
 OUT = ROOT / "site"
 MAX_IMG = 1400
@@ -247,9 +248,10 @@ def save_images(names, images, dest):
             bg.paste(im, mask=im.convert("RGBA").split()[-1])
             im = bg
         im.thumbnail((MAX_IMG, MAX_IMG))
-        out = Path(name).stem + "-" + hashlib.md5(images[name]).hexdigest()[:8] + ".jpg"
+        digest = hashlib.md5(images[name]).hexdigest()
+        out = Path(name).stem + "-" + digest[:8] + ".jpg"
         im.convert("RGB").save(dest / out, "JPEG", quality=82, optimize=True, progressive=True)
-        meta[name] = {"src": "img/" + out, "w": im.width, "h": im.height}
+        meta[name] = {"id": digest[:12], "src": "img/" + out, "w": im.width, "h": im.height}
     return meta
 
 
@@ -278,7 +280,10 @@ def main():
             s["blocks"] = [[k, [meta[n] for n in v] if k == "gallery" else v] for k, v in s["blocks"]]
         y["sections"] = [s for s in y["sections"] if s["blocks"]]
 
-    data = {"years": years, "updated": datetime.now(timezone.utc).isoformat(timespec="minutes")}
+    # ręczne przenosiny zdjęć z trybu edycji: {"moves": {id_zdjęcia: "rok|tytuł wpisu" albo "hidden"}}
+    photos = json.loads((ROOT / "photos.json").read_text(encoding="utf-8")) if (ROOT / "photos.json").exists() else {}
+    data = {"years": years, "moves": photos.get("moves", {}), "repo": REPO,
+            "updated": datetime.now(timezone.utc).isoformat(timespec="minutes")}
     template = (ROOT / "template.html").read_text(encoding="utf-8")
     page = template.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     (OUT / "index.html").write_text(page, encoding="utf-8")
@@ -290,5 +295,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()
