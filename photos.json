@@ -34,7 +34,8 @@
     "f32a2a1a52f2": "2025|Karpackie Zwierciadło Kultur",
     "e6be51b2c21a": "2025|Karpackie Zwierciadło Kultur",
     "209b3b4341de": "2025|Karpackie Zwierciadło Kultur",
-    "e201a1efb5fe": "hidden"
+    "e201a1efb5fe": "hidden",
+    "f217efeb2ec2": "2026|post:mvxs6hvb"
   },
   "members": {
     "2025": {
@@ -64,6 +65,14 @@
       "title": "Śmiergust",
       "text": "I w tym roku męska część zespołu wyjechała polewać nasze drogie tancerki. A jak poszło no zobaczcie sami...",
       "after": "2026|Marzec – z powrotem do folkloru i próba naborowa"
+    },
+    {
+      "id": "mvxs6hvb",
+      "year": "2026",
+      "date": "12.2",
+      "title": "Tłusty czwartek",
+      "text": "Tradycję trzeba dotrzymywać...a głównie jak jest taka słodka.",
+      "after": "2026|Bal Papuciowy w Suchej Średniej"
     }
   ],
   "sections": {
