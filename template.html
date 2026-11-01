@@ -179,14 +179,16 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;width:48px;height:48px;border-radius:50%;background:var(--paper);box-shadow:var(--shadow);border:1px solid var(--line);display:grid;place-items:center;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none}
 /* --- boczny suwak z datą --- */
-.scrub{position:fixed;right:0;top:calc(env(safe-area-inset-top) + 86px);bottom:calc(84px + env(safe-area-inset-bottom));width:34px;z-index:31;touch-action:none;user-select:none;-webkit-user-select:none;opacity:0;transition:opacity .3s;pointer-events:none}
-.scrub.show{opacity:1}
-.scrub.show .knob{pointer-events:auto}
-.scrub .knob{position:absolute;right:4px;width:26px;height:46px;margin-top:-23px;border-radius:13px;background:var(--green);box-shadow:0 4px 14px rgba(47,107,61,.35);display:grid;place-items:center;cursor:grab}
+.scrub{position:fixed;right:0;top:calc(env(safe-area-inset-top) + 86px);bottom:calc(84px + env(safe-area-inset-bottom));width:30px;z-index:31;touch-action:none;user-select:none;-webkit-user-select:none;opacity:0;transition:opacity .25s;pointer-events:none}
+.scrub.show{opacity:1;pointer-events:auto}
+@media (hover:hover){.scrub{pointer-events:auto}}
+.scrub .knob{position:absolute;top:0;right:3px;width:26px;height:46px;margin-top:-23px;border-radius:13px;background:var(--green);box-shadow:0 4px 14px rgba(47,107,61,.35);display:grid;place-items:center;cursor:grab;will-change:transform}
+.scrub .knob::after{content:"";position:absolute;inset:-14px -3px -14px -24px}
+.scrub.drag .knob{cursor:grabbing;background:#24552f}
 .scrub .knob::before{content:"";width:10px;height:14px;border-top:2px solid rgba(255,255,255,.8);border-bottom:2px solid rgba(255,255,255,.8)}
-.scrub .tip{position:absolute;right:38px;margin-top:-17px;max-width:min(240px,62vw);background:var(--ink);color:#fff;border-radius:12px;padding:6px 12px;box-shadow:var(--shadow);white-space:nowrap;opacity:0;transform:translateX(6px);transition:.2s;pointer-events:none}
+.scrub .tip{position:absolute;top:0;right:38px;margin-top:-17px;will-change:transform;max-width:min(240px,62vw);background:var(--ink);color:#fff;border-radius:12px;padding:6px 12px;box-shadow:var(--shadow);white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
 .scrub .tip b{display:block;font-size:15px;color:#ffd9a8}
-.scrub.talk .tip{opacity:1;transform:none}
+.scrub.talk .tip{opacity:1}
 .fab.show{opacity:1;transform:none;pointer-events:auto}
 .fab svg{width:20px;height:20px}
 @media (min-width:700px){.card-head{padding:24px 26px 6px}.card-body{padding:4px 26px 24px}.more{width:calc(100% - 52px);margin:0 26px 24px}.gallery{grid-template-columns:repeat(3,1fr)}.gallery.odd button:first-child{grid-column:auto;aspect-ratio:1}}
@@ -455,42 +457,54 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   scrub.className = "scrub";
   scrub.innerHTML = `<div class="tip"><b></b></div><div class="knob" aria-label="Przewiń wydarzenia"></div>`;
   document.body.append(scrub);
-  const knob = scrub.querySelector(".knob"), tip = scrub.querySelector(".tip");
-  let dragging = false, hideT;
-  const span = () => {
+  const knob = scrub.querySelector(".knob"), tip = scrub.querySelector(".tip"), tipB = tip.querySelector("b");
+  let dragging = false, hideT, raf = 0, range = null, entries = [];
+  const measure = () => {
     const tl = $("#main .timeline"); if (!tl) return null;
     const start = tl.getBoundingClientRect().top + scrollY - 120;
     const end = $("#main").getBoundingClientRect().bottom + scrollY - innerHeight;
+    entries = [...document.querySelectorAll("#main .entry")];
     return end - start > innerHeight ? [start, end] : null;
   };
-  const updateScrub = () => {
-    const r = span();
-    if (!r || scrollY < r[0] - 150) { if (!dragging) scrub.classList.remove("show", "talk"); return; }
-    const p = Math.min(1, Math.max(0, (scrollY - r[0]) / (r[1] - r[0])));
-    const y = p * scrub.clientHeight;
-    knob.style.top = tip.style.top = y + "px";
-    let cur;
-    for (const e of document.querySelectorAll("#main .entry")) { if (e.getBoundingClientRect().top < innerHeight * .35) cur = e; else break; }
-    cur = cur || $("#main .entry");
-    if (cur) {
-      tip.querySelector("b").textContent = cur.querySelector(".date").textContent;
-    }
-    scrub.classList.add("show", "talk");
-    clearTimeout(hideT);
-    if (!dragging) hideT = setTimeout(() => scrub.classList.remove("show", "talk"), 2500);
+  const place = p => { const y = p * scrub.clientHeight + "px"; knob.style.transform = tip.style.transform = `translateY(${y})`; };
+  const label = () => {
+    // wydarzenie u góry ekranu (wyszukiwanie binarne – szybkie nawet przy wielu wpisach)
+    let lo = 0, hi = entries.length - 1, cur = 0, line = innerHeight * .35;
+    while (lo <= hi) { const m = (lo + hi) >> 1; if (entries[m].getBoundingClientRect().top < line) { cur = m; lo = m + 1; } else hi = m - 1; }
+    const d = entries[cur] && entries[cur].querySelector(".date");
+    if (d && tipB.textContent !== d.textContent) tipB.textContent = d.textContent;
   };
-  addEventListener("scroll", updateScrub, {passive: true});
+  const hideLater = () => { clearTimeout(hideT); hideT = setTimeout(() => dragging || scrub.classList.remove("show", "talk"), 1800); };
+  const updateScrub = () => {
+    raf = 0;
+    if (!dragging) range = measure();
+    const r = range;
+    if (!r || scrollY < r[0] - 150) { if (!dragging) scrub.classList.remove("show", "talk"); return; }
+    if (!dragging) place(Math.min(1, Math.max(0, (scrollY - r[0]) / (r[1] - r[0]))));
+    label();
+    scrub.classList.add("show", "talk");
+    hideLater();
+  };
+  addEventListener("scroll", () => raf || (raf = requestAnimationFrame(updateScrub)), {passive: true});
+  addEventListener("resize", () => range = null);
   const dragTo = e => {
-    const r = span(); if (!r) return;
+    if (!range) return;
     const b = scrub.getBoundingClientRect();
     const p = Math.min(1, Math.max(0, (e.clientY - b.top) / b.height));
-    scrollTo(0, r[0] + p * (r[1] - r[0]));
+    place(p);  // uchwyt idzie za palcem od razu
+    scrollTo({top: range[0] + p * (range[1] - range[0]), behavior: "instant"});
   };
-  knob.addEventListener("pointerdown", e => { dragging = true; knob.setPointerCapture(e.pointerId); dragTo(e); e.preventDefault(); });
-  knob.addEventListener("pointermove", e => dragging && dragTo(e));
-  const drop = () => { dragging = false; updateScrub(); };
-  knob.addEventListener("pointerup", drop);
-  knob.addEventListener("pointercancel", drop);
+  scrub.addEventListener("pointerdown", e => {
+    range = measure(); if (!range) return;
+    dragging = true; scrub.classList.add("show", "talk", "drag");
+    scrub.setPointerCapture(e.pointerId); dragTo(e); e.preventDefault();
+  });
+  scrub.addEventListener("pointermove", e => dragging && dragTo(e));
+  const drop = () => { if (!dragging) return; dragging = false; scrub.classList.remove("drag"); hideLater(); };
+  scrub.addEventListener("pointerup", drop);
+  scrub.addEventListener("pointercancel", drop);
+  // na komputerze uchwyt pojawia się po najechaniu myszą na prawą krawędź
+  scrub.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") { range = measure(); if (range) updateScrub(); } });
 
   // przycisk do góry
   const fab = $("#fab");
