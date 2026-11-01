@@ -83,6 +83,8 @@ details.team[open] summary::after{transform:rotate(-135deg)}
 .card-body p{margin:10px 0 0;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
 .card-body strong{font-weight:600}
 .card.ghost{opacity:.5}
+.gallery button video{width:100%;height:100%;object-fit:cover;pointer-events:none}
+.vbadge{position:absolute;left:6px;bottom:6px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;font-size:12px}
 .vid{display:block;width:100%;max-height:75vh;margin-top:14px;border-radius:12px;background:#000}
 .tag{align-self:center;font-size:12.5px;font-weight:600;color:#7a5a17;background:var(--gold-2);border-radius:8px;padding:3px 8px}
 .card.collapsed .card-body{max-height:300px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}
@@ -215,7 +217,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   const BASE = DATA.years;
   BASE.forEach(y => y.sections.forEach((s, i) => {
     s.id = `${y.year}-${i + 1}`; s.key = `${y.year}|${s.title}`;
-    s.blocks.forEach(([k, v]) => k === "gallery" && v.forEach(im => im.home = s.key));
+    s.blocks.forEach(([k, v]) => { if (k === "gallery") v.forEach(im => im.home = s.key); else if (k === "video" && v.id) v.home = s.key; });
   }));
   // tryb edycji tylko dla kronikarza: hasło przy wejściu (5× stuknij logo albo adres z ?edytuj)
   const PASS = "1234";
@@ -245,7 +247,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       if (ov.date != null) s.date = ov.date;
       if (ov.text != null) {
         const ims = s.blocks.filter(b => b[0] === "gallery").flatMap(b => b[1]);
-        s.blocks = [...textBlocks(ov.text), ...(ims.length ? [["gallery", ims]] : [])];
+        s.blocks = [...textBlocks(ov.text), ...(ims.length ? [["gallery", ims]] : []), ...s.blocks.filter(b => b[0] === "video")];
       }
       s.edited = true;
       if (ov.hidden) s.hiddenEntry = true;
@@ -262,18 +264,20 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     }
     // przenosiny zdjęć
     const byKey = {}, imgs = {};
-    ys.forEach(y => y.sections.forEach(s => { byKey[s.key] = s; s.blocks.forEach(([k, v]) => k === "gallery" && v.forEach(im => imgs[im.id] = im)); }));
+    ys.forEach(y => y.sections.forEach(s => { byKey[s.key] = s; s.blocks.forEach(([k, v]) => { if (k === "gallery") v.forEach(im => imgs[im.id] = im); else if (k === "video" && v.id) imgs[v.id] = v; }); }));
     const moves = edits.moves;
     const moving = Object.keys(moves).filter(id => imgs[id] && (moves[id] === "hidden" || byKey[moves[id]]));
     const out = new Set(moving);
     ys.forEach(y => y.sections.forEach(s => {
-      s.blocks = s.blocks.map(([k, v]) => [k, k === "gallery" ? v.filter(im => !out.has(im.id)) : v]).filter(([k, v]) => k !== "gallery" || v.length);
+      s.blocks = s.blocks.map(([k, v]) => [k, k === "gallery" ? v.filter(im => !out.has(im.id)) : v])
+        .filter(([k, v]) => (k !== "gallery" || v.length) && !(k === "video" && v.id && out.has(v.id)));
     }));
     hidden = [];
     for (const id of moving) {
       if (moves[id] === "hidden") { hidden.push(imgs[id]); continue; }
       const b = byKey[moves[id]].blocks, last = b[b.length - 1];
-      if (last && last[0] === "gallery") last[1].push(imgs[id]); else b.push(["gallery", [imgs[id]]]);
+      if (imgs[id].video) b.push(["video", imgs[id]]);
+      else if (last && last[0] === "gallery") last[1].push(imgs[id]); else b.push(["gallery", [imgs[id]]]);
     }
     ys.forEach(y => y.sections = y.sections.filter(s => (s.blocks.length || s.post) && (!s.hiddenEntry || DEV)));
     return ys.filter(y => y.sections.length || y.members.length);
@@ -305,7 +309,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     if (y.members.length || DEV) h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary><div class="chips">${y.members.map(m => DEV ? `<button class="chip" data-member="${esc(m)}">${esc(m)} ✎</button>` : `<span class="chip">${esc(m)}</span>`).join("")}${DEV ? `<button class="chip add" data-member="">+ Dodaj osobę</button>` : ""}</div></details>`;
     h += `<div class="timeline">` + y.sections.map(s => {
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : k === "video"
-        ? `<video class="vid" src="${esc(v)}#t=0.1" controls playsinline preload="metadata"></video>` : gallery(v)).join("");
+        ? `<video class="vid" src="${esc(v.src || v)}#t=0.1" controls playsinline preload="metadata"></video>${DEV && v.id ? `<div class="edit-actions" style="margin-top:8px"><button data-vidid="${v.id}">✎ Przenieś / ukryj film</button></div>` : ""}` : gallery(v)).join("");
       const len = strip(body).length, fold = len > 900 && !DEV;
       return `<article class="entry" id="${s.id}"><div class="card${fold ? " collapsed" : ""}${s.hiddenEntry ? " ghost" : ""}">
         <div class="card-head"><span class="date${s.date ? "" : " nodate"}">${s.date ? esc(s.date) : "✦ " + y.year}</span><h3>${esc(s.title)}</h3>
@@ -335,6 +339,8 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     if (more) { more.previousElementSibling.parentElement.classList.remove("collapsed"); more.remove(); return; }
     const ny = e.target.closest(".next-year");
     if (ny) return go(ny.dataset.y, true);
+    const vm = e.target.closest("[data-vidid]");
+    if (vm) return openEdit(vm.dataset.vidid);
     const g = e.target.closest(".gallery button");
     if (g) return DEV ? openEdit(g.dataset.id) : openLb(+g.dataset.i);
     const mb = e.target.closest("[data-member]");
@@ -420,9 +426,12 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   const closeEdit = () => editWrap.classList.remove("open");
   const openSheet = (html, onclick) => { editBox.innerHTML = `<div class="grip"></div>` + html; editBox.onclick = onclick; editWrap.classList.add("open"); editBox.scrollTop = 0; };
   $("#editScrim").onclick = closeEdit;
-  const allImgs = () => BASE.flatMap(y => y.sections.flatMap(s => s.blocks.filter(b => b[0] === "gallery").flatMap(b => b[1])));
+  const mediaOf = s => s.blocks.flatMap(([k, v]) => k === "gallery" ? v : k === "video" && v.id ? [v] : []);
+  const allImgs = () => BASE.flatMap(y => y.sections.flatMap(mediaOf));
+  // miniatura zdjęcia albo filmu
+  const thumb = (im, extra = "") => im.video ? `<video src="${im.src}#t=0.1" muted playsinline preload="metadata"${extra}></video><span class="vbadge">▶</span>` : `<img src="${im.src}" alt=""${extra}>`;
   const findImg = id => allImgs().find(x => x.id === id);
-  const placeOf = id => { for (const y of years) for (const s of y.sections) for (const [k, v] of s.blocks) if (k === "gallery" && v.some(x => x.id === id)) return s; };
+  const placeOf = id => { for (const y of years) for (const s of y.sections) if (mediaOf(s).some(x => x.id === id)) return s; };
   const titleOfKey = key => { for (const y of years) for (const s of y.sections) if (s.key === key) return s.title; return key.split("|").slice(1).join("|"); };
 
   // każda zmiana = funkcja na obiekcie zmian; wykonuje się lokalnie i na świeżym photos.json z GitHuba
@@ -454,7 +463,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   function openEdit(id) {
     const im = findImg(id), place = placeOf(id), isHidden = edits.moves[id] === "hidden";
     const moved = edits.moves[id] && edits.moves[id] !== im.home;
-    openSheet(`<img class="edit-prev" src="${im.src}" alt="">
+    openSheet(`${im.video ? `<video class="edit-prev" src="${im.src}#t=0.1" controls playsinline preload="metadata"></video>` : `<img class="edit-prev" src="${im.src}" alt="">`}
       <p class="edit-where">${isHidden ? "Zdjęcie jest <b>ukryte</b>." : `Teraz w: <b>${esc(place ? place.title : "?")}</b>`}${moved ? `<br><small>Oryginalnie: ${esc(titleOfKey(im.home))}</small>` : ""}</p>
       <div class="edit-actions">
         ${isHidden ? `<button data-act="show">Pokaż z powrotem</button>` : `<button data-act="hide">Ukryj zdjęcie</button>`}
@@ -479,7 +488,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
 
   function openHidden() {
     openSheet(`<h4 class="edit-h">Ukryte zdjęcia</h4>` + (hidden.length
-      ? `<div class="gallery">${hidden.map(im => `<button data-hid="${im.id}"><img src="${im.src}" alt=""></button>`).join("")}</div>`
+      ? `<div class="gallery">${hidden.map(im => `<button data-hid="${im.id}">${thumb(im)}</button>`).join("")}</div>`
       : `<div class="empty">Brak ukrytych zdjęć</div>`),
       e => { const b = e.target.closest("[data-hid]"); if (b) openEdit(b.dataset.hid); });
   }
@@ -546,7 +555,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
           ${secs.map(s => `<option value="${esc(s.key)}"${draft.after === s.key ? " selected" : ""}>Po: ${esc((s.date ? s.date + " " : "") + s.title)}</option>`).join("")}
         </select></label>
         <div class="label">Zdjęcia (${thumbs.length})</div>
-        ${thumbs.length ? `<div class="gallery">${thumbs.map(im => `<button data-pick="${im.id}" title="Usuń z wpisu"><img src="${im.src}" alt=""><span class="x">✕</span></button>`).join("")}</div>` : ""}
+        ${thumbs.length ? `<div class="gallery">${thumbs.map(im => `<button data-pick="${im.id}" title="Usuń z wpisu">${thumb(im)}<span class="x">✕</span></button>`).join("")}</div>` : ""}
         <div class="edit-actions"><button data-act="pick">+ Wybierz zdjęcia z kroniki</button></div>
         ${(draft.videos || []).length ? `<div class="label">Wideo</div>${draft.videos.map(v => `<div class="edit-actions"><span class="tag">🎬 ${esc(v.split("/").pop())}</span><button data-vid="${esc(v)}" class="danger">Usuń wideo z wpisu</button></div>`).join("")}` : ""}
       </div>
@@ -585,7 +594,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     const d = document.createElement("div"); d.innerHTML = b[1].replace(/<br\s*\/?>/g, "\n"); return d.textContent.trim();
   }).join("\n\n");
   const baseSection = key => { for (const y of BASE) for (const s of y.sections) if (s.key === key) return s; };
-  const photosIn = s => s.blocks.filter(b => b[0] === "gallery").flatMap(b => b[1]).map(im => im.id);
+  const photosIn = s => mediaOf(s).map(im => im.id);
 
   function openDocEntry(s) {
     draft = {doc: s.key, year: s.key.split("|")[0], date: s.date, title: s.title, text: htmlToText(s.blocks), photos: photosIn(s), initial: photosIn(s)};
@@ -602,7 +611,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
         <label>Tytuł<input id="pTitle" class="search" value="${esc(draft.title)}"></label>
         <label>Tekst <small>(pusta linijka = nowy akapit; pogrubienia z dokumentu znikną, jeśli zmienisz tekst)</small><textarea id="pText" class="search" rows="10">${esc(draft.text)}</textarea></label>
         <div class="label">Zdjęcia (${thumbs.length})</div>
-        ${thumbs.length ? `<div class="gallery">${thumbs.map(im => `<button data-pick="${im.id}" title="Usuń z wpisu"><img src="${im.src}" alt=""><span class="x">✕</span></button>`).join("")}</div>` : ""}
+        ${thumbs.length ? `<div class="gallery">${thumbs.map(im => `<button data-pick="${im.id}" title="Usuń z wpisu">${thumb(im)}<span class="x">✕</span></button>`).join("")}</div>` : ""}
         <div class="edit-actions"><button data-act="pick">+ Wybierz zdjęcia z kroniki</button></div>
         <div class="edit-actions">
           ${ov.hidden ? `<button data-act="show">Pokaż wpis z powrotem</button>` : `<button data-act="hide" class="danger">Ukryj wpis</button>`}
@@ -644,8 +653,8 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   function photoPicker() {
     const sel = new Set(draft.photos);
     const groups = [...BASE].reverse().map(y => {
-      const ims = y.sections.flatMap(s => s.blocks.filter(b => b[0] === "gallery").flatMap(b => b[1]));
-      return ims.length ? `<h4>${y.year}</h4><div class="gallery picker">${ims.map(im => `<button data-sel="${im.id}" class="${sel.has(im.id) ? "on" : ""}"><img src="${im.src}" loading="lazy" alt=""><span class="tick">✓</span></button>`).join("")}</div>` : "";
+      const ims = y.sections.flatMap(mediaOf);
+      return ims.length ? `<h4>${y.year}</h4><div class="gallery picker">${ims.map(im => `<button data-sel="${im.id}" class="${sel.has(im.id) ? "on" : ""}">${thumb(im, ' loading="lazy"')}<span class="tick">✓</span></button>`).join("")}</div>` : "";
     }).join("");
     openSheet(`<h4 class="edit-h">Wybierz zdjęcia</h4><p class="edit-where"><small>Zaznaczone zdjęcia przeniosą się do tego wpisu.</small></p>
       <div class="toc">${groups}</div>

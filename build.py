@@ -31,14 +31,33 @@ DATE_RE = re.compile(r"^\s*((?:\d{1,2}(?:\.\d{1,2})?\s*[-–]\s*)?\d{1,2}\.\d{1,
 SPACES_RE = re.compile(r"[\s ]{3,}")
 
 
-def download():
-    url = f"https://docs.google.com/document/d/{DOC_ID}/export?format=zip"
-    with urllib.request.urlopen(url, timeout=120) as r:
-        data = r.read()
-    z = zipfile.ZipFile(io.BytesIO(data))
+def read_zip(data):
+    z = zipfile.ZipFile(io.BytesIO(data) if isinstance(data, bytes) else data)
     name = next(n for n in z.namelist() if n.endswith(".html"))
     images = {n.split("/", 1)[1]: z.read(n) for n in z.namelist() if n.startswith("images/") and not n.endswith("/")}
     return z.read(name).decode("utf-8"), images
+
+
+def fetch(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        return r.read()
+
+
+def download():
+    """Pierwsza karta dokumentu (kronika) + pozostałe karty, np. „FOTO” → [(nazwa, html, zdjęcia)]."""
+    raw, images = read_zip(fetch(f"https://docs.google.com/document/d/{DOC_ID}/export?format=zip"))
+    page = fetch(f"https://docs.google.com/document/d/{DOC_ID}/edit").decode("utf-8", "replace")
+    tabs = []
+    for tab_id, name in dict.fromkeys(re.findall(r'"ty":"ac","d":\["(t\.[a-z0-9]+)",\[1,"([^"]*)"\]', page)):
+        tabs.append((name, *read_zip(fetch(f"https://docs.google.com/document/d/{DOC_ID}/export?format=zip&tab={tab_id}"))))
+    return raw, images, tabs
+
+
+def tab_images(raw, images):
+    """Zdjęcia z karty w kolejności z dokumentu."""
+    names = [src.split("/")[-1] for src in re.findall(r'<img[^>]*src="([^"]+)"', raw)]
+    return [n for n in dict.fromkeys(names) if n in images]
 
 
 def style_classes(raw):
@@ -249,23 +268,39 @@ def save_images(names, images, dest):
             im = bg
         im.thumbnail((MAX_IMG, MAX_IMG))
         digest = hashlib.md5(images[name]).hexdigest()
-        out = Path(name).stem + "-" + digest[:8] + ".jpg"
+        out = re.sub(r"[^A-Za-z0-9_-]+", "-", Path(name).stem)[:40] + "-" + digest[:8] + ".jpg"
         im.convert("RGB").save(dest / out, "JPEG", quality=82, optimize=True, progressive=True)
         meta[name] = {"id": digest[:12], "src": "img/" + out, "w": im.width, "h": im.height}
     return meta
 
 
 def main():
-    if len(sys.argv) > 1:  # lokalnie: python build.py doc.zip
-        z = zipfile.ZipFile(sys.argv[1])
-        name = next(n for n in z.namelist() if n.endswith(".html"))
-        raw = z.read(name).decode("utf-8")
-        images = {n.split("/", 1)[1]: z.read(n) for n in z.namelist() if n.startswith("images/") and not n.endswith("/")}
+    if len(sys.argv) > 1:  # lokalnie: python build.py doc.zip [foto.zip]
+        raw, images = read_zip(sys.argv[1])
+        tabs = [("FOTO", *read_zip(sys.argv[2]))] if len(sys.argv) > 2 else []
     else:
-        raw, images = download()
+        raw, images, tabs = download()
 
     years = Parser(raw, images).parse()
     years = [y for y in years if y["sections"] or y["members"]]
+
+    # ostatnie wydarzenie „Foto”: zdjęcia z dodatkowych kart dokumentu + zdjęcia i filmy z folderu wideo/
+    # (kronikarz rozkłada je potem po wpisach w trybie edycji)
+    extra, videos = [], []
+    for name, traw, timgs in tabs:
+        for n in tab_images(traw, timgs):
+            images[f"{name}/{n}"] = timgs[n]
+            extra.append(f"{name}/{n}")
+    media = ROOT / "wideo"
+    for f in sorted(media.iterdir()) if media.exists() else []:
+        if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
+            images["wideo/" + f.name] = f.read_bytes()
+            extra.append("wideo/" + f.name)
+        elif f.suffix.lower() in (".mp4", ".mov", ".m4v", ".webm"):
+            videos.append({"id": "v" + hashlib.md5(f.read_bytes()).hexdigest()[:11], "src": "wideo/" + f.name, "video": True})
+    if (extra or videos) and years:
+        blocks = ([["gallery", extra]] if extra else []) + [["video", v] for v in videos]
+        years[-1]["sections"].append({"title": "Foto", "date": "", "blocks": blocks})
 
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -288,8 +323,10 @@ def main():
     template = (ROOT / "template.html").read_text(encoding="utf-8")
     page = template.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     (OUT / "index.html").write_text(page, encoding="utf-8")
-    if (ROOT / "wideo").exists():  # filmy do wpisów kronikarza (photos.json → posts[].videos)
-        shutil.copytree(ROOT / "wideo", OUT / "wideo")
+    if videos:
+        (OUT / "wideo").mkdir()
+        for v in videos:
+            shutil.copy(ROOT / v["src"], OUT / v["src"])
     for f in (ROOT / "assets").iterdir():
         shutil.copy(f, OUT / f.name)
     (OUT / ".nojekyll").write_text("")
