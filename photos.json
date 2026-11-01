@@ -1,7 +1,8 @@
 {
   "moves": {
     "de17061680aa": "2026|Bal Macierzy Szkolnej w Karwinie",
-    "1b13fa91f2ff": "2026|Bal Papuciowy w Suchej Średniej"
+    "1b13fa91f2ff": "2026|Bal Papuciowy w Suchej Średniej",
+    "a68c480d9c36": "2026|post:mvxrdil1"
   },
   "members": {
     "2025": {
@@ -23,6 +24,15 @@
       }
     }
   },
-  "posts": [],
+  "posts": [
+    {
+      "id": "mvxrdil1",
+      "year": "2026",
+      "date": "6.4",
+      "title": "Śmiergust",
+      "text": "I w tym roku męska część zespołu wyjechała polewać nasze drogie tancerki. A jak poszło no zobaczcie sami...",
+      "after": "2026|Marzec – z powrotem do folkloru i próba naborowa"
+    }
+  ],
   "sections": {}
 }
