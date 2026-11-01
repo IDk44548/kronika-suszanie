@@ -24,7 +24,7 @@
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%23c4932f' stroke-opacity='.2' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M48 62V36M48 36c-7-2-10-9-9-15 3 3 6 5 9 5s6-2 9-5c1 6-2 13-9 15zM48 54c-6 0-11-3-13-9 6 0 10 3 13 7M48 54c6 0 11-3 13-9-6 0-10 3-13 7'/%3E%3C/g%3E%3Cg fill='%232f6b3d' fill-opacity='.1'%3E%3Ccircle cx='0' cy='0' r='3'/%3E%3Ccircle cx='96' cy='0' r='3'/%3E%3Ccircle cx='0' cy='96' r='3'/%3E%3Ccircle cx='96' cy='96' r='3'/%3E%3Ccircle cx='48' cy='14' r='1.6'/%3E%3C/g%3E%3C/svg%3E") 0 0/96px;color:var(--ink);font:16.5px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--ink);font:16.5px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
 img{max-width:100%;display:block}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 a{color:var(--green)}
@@ -35,12 +35,16 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:700;line-height:1.15;mar
   background:radial-gradient(120% 90% at 50% 0%,#fff 0%,#f3efe2 70%,var(--bg) 100%);overflow:hidden}
 .hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;
   background:repeating-linear-gradient(90deg,var(--red) 0 14px,var(--gold) 14px 20px,var(--green) 20px 34px,var(--gold) 34px 40px);opacity:.85}
+/* loga Suszanie powoli płynące w tle */
+body::before{content:"";position:fixed;inset:-220px;z-index:-1;pointer-events:none;opacity:.08;
+  background:url("logo-tlo.png") 0 0/180px 210px repeat;animation:drift 70s linear infinite;transform:rotate(-6deg)}
+body{position:relative;z-index:0}
+@keyframes drift{to{background-position:180px 210px}}
+@media (prefers-reduced-motion:reduce){body::before{animation:none}}
 .hero > *{position:relative;z-index:1}
 .hero .land{position:absolute;left:0;right:0;bottom:10px;height:110px;z-index:0;pointer-events:none}
 .hero .land svg{position:absolute;bottom:0;left:0;width:100%;height:100%}
 .hero .land .town{left:50%;transform:translateX(-50%);max-width:760px}
-.glueck{text-align:center;margin:30px 0 0;font:600 15px Fraunces,serif;color:var(--green);letter-spacing:.02em}
-.glueck span{display:block;font:400 13px Inter,sans-serif;color:var(--muted);margin-top:2px}
 .hero img{width:104px;height:auto;margin:0 auto 16px;filter:drop-shadow(0 10px 22px rgba(47,107,61,.22));mix-blend-mode:multiply}
 .hero .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--green);font-weight:600}
 .hero h1{font-size:clamp(34px,10vw,52px);margin:6px 0 4px}
@@ -347,7 +351,6 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     }).join("") + `</div>`;
     if (idx < years.length - 1) h += `<button class="next-year" data-y="${years[idx + 1].year}">Dalej: rok ${years[idx + 1].year} →</button>`;
     else if (idx > 0) h += `<button class="next-year" data-y="${years[0].year}">← Wróć do roku ${years[0].year}</button>`;
-    h += `<p class="glueck">⚒ Szczęść Boże!<span>z Suchej Górnej, ze Śląska Cieszyńskiego</span></p>`;
     h += `<p class="updated">Kronikarz: Filip Jiravský · aktualizacja ${new Date(DATA.updated).toLocaleString("pl-PL", {day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit"})}<br><a href="https://www.facebook.com/Suszanie" target="_blank" rel="noopener">Facebook</a> · <a href="https://www.instagram.com/zpitsuszanie/" target="_blank" rel="noopener">Instagram</a></p>`;
     $("#main").innerHTML = h;
   }
