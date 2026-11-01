@@ -83,6 +83,7 @@ details.team[open] summary::after{transform:rotate(-135deg)}
 .card-body p{margin:10px 0 0;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
 .card-body strong{font-weight:600}
 .card.ghost{opacity:.5}
+.vid{display:block;width:100%;max-height:75vh;margin-top:14px;border-radius:12px;background:#000}
 .tag{align-self:center;font-size:12.5px;font-weight:600;color:#7a5a17;background:var(--gold-2);border-radius:8px;padding:3px 8px}
 .card.collapsed .card-body{max-height:300px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}
 .more{display:block;width:calc(100% - 36px);margin:0 18px 18px;padding:11px;border-radius:12px;background:var(--gold-2);color:#7a5a17;font-weight:600;font-size:15px}
@@ -252,7 +253,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     // nowe wpisy kronikarza
     for (const p of edits.posts) {
       const y = ys.find(x => x.year === p.year);
-      const sec = {id: `${p.year}-p${p.id}`, key: `${p.year}|post:${p.id}`, post: p, title: p.title, date: p.date || "", blocks: textBlocks(p.text)};
+      const sec = {id: `${p.year}-p${p.id}`, key: `${p.year}|post:${p.id}`, post: p, title: p.title, date: p.date || "", blocks: [...textBlocks(p.text), ...(p.videos || []).map(v => ["video", v])]};
       let i = y.sections.length;
       if (p.after === "start") i = 0;
       else if (p.after) { const j = y.sections.findIndex(s => s.key === p.after); if (j >= 0) i = j + 1; }
@@ -303,7 +304,8 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     h += `<div class="year-head"><h2>${y.year}</h2><span>${y.sections.length} wpisów</span></div>`;
     if (y.members.length || DEV) h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary><div class="chips">${y.members.map(m => DEV ? `<button class="chip" data-member="${esc(m)}">${esc(m)} ✎</button>` : `<span class="chip">${esc(m)}</span>`).join("")}${DEV ? `<button class="chip add" data-member="">+ Dodaj osobę</button>` : ""}</div></details>`;
     h += `<div class="timeline">` + y.sections.map(s => {
-      const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : gallery(v)).join("");
+      const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : k === "video"
+        ? `<video class="vid" src="${esc(v)}#t=0.1" controls playsinline preload="metadata"></video>` : gallery(v)).join("");
       const len = strip(body).length, fold = len > 900 && !DEV;
       return `<article class="entry" id="${s.id}"><div class="card${fold ? " collapsed" : ""}${s.hiddenEntry ? " ghost" : ""}">
         <div class="card-head"><span class="date${s.date ? "" : " nodate"}">${s.date ? esc(s.date) : "✦ " + y.year}</span><h3>${esc(s.title)}</h3>
@@ -546,6 +548,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
         <div class="label">Zdjęcia (${thumbs.length})</div>
         ${thumbs.length ? `<div class="gallery">${thumbs.map(im => `<button data-pick="${im.id}" title="Usuń z wpisu"><img src="${im.src}" alt=""><span class="x">✕</span></button>`).join("")}</div>` : ""}
         <div class="edit-actions"><button data-act="pick">+ Wybierz zdjęcia z kroniki</button></div>
+        ${(draft.videos || []).length ? `<div class="label">Wideo</div>${draft.videos.map(v => `<div class="edit-actions"><span class="tag">🎬 ${esc(v.split("/").pop())}</span><button data-vid="${esc(v)}" class="danger">Usuń wideo z wpisu</button></div>`).join("")}` : ""}
       </div>
       <div class="edit-actions sticky">
         <button data-act="save" class="primary">${draft.isNew ? "Dodaj wpis" : "Zapisz"}</button>
@@ -553,6 +556,8 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       </div>`, e => {
       const act = e.target.closest("[data-act]"), pk = e.target.closest("[data-pick]");
       if (pk) { readForm(); draft.photos = draft.photos.filter(x => x !== pk.dataset.pick); return postForm(); }
+      const vb = e.target.closest("[data-vid]");
+      if (vb) { readForm(); draft.videos = draft.videos.filter(v => v !== vb.dataset.vid); return postForm(); }
       if (!act) return;
       readForm();
       if (act.dataset.act === "pick") return photoPicker();
@@ -564,6 +569,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       if (!/^\d{4}$/.test(draft.year)) return toast("Rok musi mieć 4 cyfry");
       if (!draft.title) return toast("Wpisz tytuł");
       const p = {id: draft.id, year: draft.year, date: draft.date, title: draft.title, text: draft.text.trim(), after: draft.after};
+      if (draft.videos && draft.videos.length) p.videos = draft.videos;
       const k = `${p.year}|post:${p.id}`, photos = [...draft.photos];
       commit(d => {
         const i = d.posts.findIndex(x => x.id === p.id);

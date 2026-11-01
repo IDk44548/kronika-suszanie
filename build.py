@@ -288,6 +288,8 @@ def main():
     template = (ROOT / "template.html").read_text(encoding="utf-8")
     page = template.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     (OUT / "index.html").write_text(page, encoding="utf-8")
+    if (ROOT / "wideo").exists():  # filmy do wpisów kronikarza (photos.json → posts[].videos)
+        shutil.copytree(ROOT / "wideo", OUT / "wideo")
     for f in (ROOT / "assets").iterdir():
         shutil.copy(f, OUT / f.name)
     (OUT / ".nojekyll").write_text("")
