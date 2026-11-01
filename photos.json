@@ -2,7 +2,8 @@
   "moves": {
     "de17061680aa": "2026|Bal Macierzy Szkolnej w Karwinie",
     "1b13fa91f2ff": "2026|Bal Papuciowy w Suchej Średniej",
-    "a68c480d9c36": "2026|post:mvxrdil1"
+    "a68c480d9c36": "2026|post:mvxrdil1",
+    "933db9234df0": "2026|Maj nad Olzą"
   },
   "members": {
     "2025": {
@@ -34,5 +35,9 @@
       "after": "2026|Marzec – z powrotem do folkloru i próba naborowa"
     }
   ],
-  "sections": {}
+  "sections": {
+    "2026|Maj nad Olzą": {
+      "text": "Niedzielny występ na Maju nad Olzą w Karwinie. W programie tańce rozbarskie, ale sobotę wieczorem nikt nie potrafił powiedzieć, kto wziął z Suszanki rozbarskie wianki...Tadzio nawet szykował się już na wycieczkę po nie, ale nakoniec Kamcia go wyręczyła. Kierownik podsunął przy okazji, żeby w Karwinie „coś nakręcić” do festiwalowej rolki i tak też się stało."
+    }
+  }
 }
