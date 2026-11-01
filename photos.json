@@ -1,5 +1,7 @@
 {
-  "moves": {},
+  "moves": {
+    "de17061680aa": "2026|Bal Macierzy Szkolnej w Karwinie"
+  },
   "members": {
     "2025": {
       "add": [
@@ -20,5 +22,6 @@
       }
     }
   },
-  "posts": []
+  "posts": [],
+  "sections": {}
 }
