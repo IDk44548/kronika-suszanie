@@ -12,6 +12,7 @@ import urllib.parse
 import re
 import shutil
 import sys
+import unicodedata
 import urllib.request
 import zipfile
 from datetime import datetime, timezone
@@ -274,6 +275,37 @@ def save_images(names, images, dest):
     return meta
 
 
+def face_slug(name):
+    """„Filip Jiravský” → „filip-jiravsky” (tak samo liczy to strona w przeglądarce)."""
+    n = unicodedata.normalize("NFD", name.replace("ł", "l").replace("Ł", "L"))
+    n = "".join(c for c in n if not unicodedata.combining(c)).lower()
+    return re.sub(r"[^a-z0-9]+", "-", n).strip("-")
+
+
+def save_faces():
+    """Zdjęcia osób z folderu ludzie/ (nazwa pliku = imię i nazwisko) → site/ludzie/, max 700 px."""
+    src = ROOT / "ludzie"
+    if not src.is_dir():
+        return {}
+    (OUT / "ludzie").mkdir(exist_ok=True)
+    faces = {}
+    for f in sorted(src.iterdir()):
+        if f.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp", ".heic"):
+            continue
+        try:
+            im = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
+        except Exception as e:
+            print("Pomijam", f.name, e)
+            continue
+        im.thumbnail((700, 700))
+        slug = face_slug(f.stem)
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=85, optimize=True, progressive=True)
+        (OUT / "ludzie" / f"{slug}.jpg").write_bytes(buf.getvalue())
+        faces[slug] = f"ludzie/{slug}.jpg?v={hashlib.md5(buf.getvalue()).hexdigest()[:8]}"
+    return faces
+
+
 def main():
     if len(sys.argv) > 1:  # lokalnie: python build.py doc.zip [foto.zip]
         raw, images = read_zip(sys.argv[1])
@@ -318,7 +350,8 @@ def main():
     # zmiany z trybu kronikarza: {"moves": {id_zdjęcia: "rok|tytuł" | "hidden"},
     #   "members": {rok: {"add": [], "remove": [], "rename": {}}}, "posts": [{id, year, date, title, text, after}]}
     photos = json.loads((ROOT / "photos.json").read_text(encoding="utf-8")) if (ROOT / "photos.json").exists() else {}
-    data = {"years": years, "edits": photos, "repo": REPO,
+    faces = save_faces()
+    data = {"years": years, "edits": photos, "repo": REPO, "faces": faces,
             "updated": datetime.now(timezone.utc).isoformat(timespec="minutes")}
     template = (ROOT / "template.html").read_text(encoding="utf-8")
     page = template.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))

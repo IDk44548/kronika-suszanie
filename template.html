@@ -107,6 +107,13 @@ details.grp[open] summary::after{transform:rotate(-135deg)}
 .lead b{display:block;font-size:15.5px}
 .lead span{display:block;font-size:13px;color:var(--muted)}
 .chip{background:var(--green-2);color:#244f2f;border-radius:999px;padding:4px 11px;font-size:14px}
+.av{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:none;background:var(--line)}
+.chip.has-av{display:flex;align-items:center;gap:7px;padding-left:4px;cursor:zoom-in}
+.av.big{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 6px;border:3px solid var(--paper);box-shadow:var(--shadow)}
+.av.ini{background:var(--paper);color:var(--green);font:700 20px Fraunces,serif}
+.lead[data-face]{cursor:zoom-in}
+.face-edit{display:flex;align-items:center;gap:12px;margin-top:12px}
+.face-edit .av.big{margin:0}
 
 /* timeline */
 .timeline{position:relative;padding-left:22px}
@@ -306,6 +313,11 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   const isWoman = n => { const [f, ...r] = n.split(" "); return /a$/i.test(f) || /^(elen|lucie|nikol|karin|ester|ivet)$/i.test(f) || /(ová|ská|cká|á)$/i.test(r.join(" ")); };
   const groupOf = n => person(n).group || (isWoman(n) ? "tancerka" : "tancerz");
   const lead = n => { const i = Object.keys(PEOPLE0).indexOf(n); return i < 0 ? 99 : i; };
+  const slugName = n => n.replace(/ł/g, "l").replace(/Ł/g, "L").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const localFaces = {};  // wgrane / usunięte w tej sesji, zanim strona się przebuduje
+  const faceOf = n => { const k = slugName(n); return k in localFaces ? localFaces[k] : (DATA.faces || {})[k] || ""; };
+  const initials = n => n.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+  let faceImgs = [];
   const surname = n => n.split(" ").slice(1).join(" ") || n;
   const bySurname = (a, b) => surname(a).localeCompare(surname(b), "pl");
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -390,6 +402,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     };
     let h = DEV ? `<div class="dev-bar"><b>✎ Tryb kronikarza</b><span>Kliknij zdjęcie, osobę ze składu albo „Nowy wpis”.</span><div><button data-dev="post" class="primary">+ Nowy wpis</button><button data-dev="hidden">Ukryte zdjęcia (${hidden.length})</button><button data-dev="off">Wyłącz edycję</button></div></div>` : "";
     h += `<div class="year-head"><h2>${y.year}</h2><span>${y.sections.length} wpisów</span></div>`;
+    faceImgs = [];
     if (y.members.length || DEV) {
       const by = {};
       y.members.forEach(m => (by[groupOf(m)] = by[groupOf(m)] || []).push(m));
@@ -397,9 +410,10 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
         const list = (by[g] || []).sort(g === "kier" ? (a, b) => lead(a) - lead(b) || bySurname(a, b) : bySurname);
         if (!list.length && !DEV && g !== "kapela") return [g, ""];
         const tag = DEV ? "button" : "div", att = m => DEV ? ` data-member="${esc(m)}"` : "";
+        const fa = m => !DEV && faceOf(m) ? ` data-face="${faceImgs.push({src: faceOf(m)}) - 1}" role="button"` : "";
         const items = g === "kier"
-          ? list.map(m => `<${tag} class="lead"${att(m)}><b>${esc(m)}${DEV ? " ✎" : ""}</b>${person(m).role ? `<span>${esc(person(m).role)}</span>` : ""}</${tag}>`).join("")
-          : list.map(m => `<${tag} class="chip"${att(m)}>${esc(m)}${DEV ? " ✎" : ""}${person(m).role ? ` <small>· ${esc(person(m).role)}</small>` : ""}</${tag}>`).join("");
+          ? list.map(m => `<${tag} class="lead"${att(m)}${fa(m)}>${faceOf(m) ? `<img class="av big" src="${esc(faceOf(m))}" alt="" loading="lazy">` : `<span class="av big ini">${initials(m)}</span>`}<b>${esc(m)}${DEV ? " ✎" : ""}</b>${person(m).role ? `<span>${esc(person(m).role)}</span>` : ""}</${tag}>`).join("")
+          : list.map(m => `<${tag} class="chip${faceOf(m) ? " has-av" : ""}"${att(m)}${fa(m)}>${faceOf(m) ? `<img class="av" src="${esc(faceOf(m))}" alt="" loading="lazy">` : ""}${esc(m)}${DEV ? " ✎" : ""}${person(m).role ? ` <small>· ${esc(person(m).role)}</small>` : ""}</${tag}>`).join("");
         const add = DEV ? `<button class="chip add" data-member="" data-group="${g}">+ Dodaj</button>` : "";
         return [g, `<details class="grp grp-${g}" open><summary>${label}<small>${list.length}</small></summary><div class="${g === "kier" ? "leads" : "chips"}">${items}${add}</div></details>`];
       }));
@@ -448,6 +462,8 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     if (vm) return openEdit(vm.dataset.vidid);
     const g = e.target.closest(".gallery button");
     if (g) return DEV ? openEdit(g.dataset.id) : openLb(+g.dataset.i);
+    const fc = e.target.closest("[data-face]");
+    if (fc) return openLb(+fc.dataset.face, faceImgs);
     const mb = e.target.closest("[data-member]");
     if (mb) { e.preventDefault(); return openMember(current.year, mb.dataset.member, mb.dataset.group); }
     const eb = e.target.closest("[data-entry]");
@@ -482,19 +498,20 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
 
   // galeria pełnoekranowa
   const lb = $("#lb"), track = $("#lbTrack");
-  let li = 0;
-  function openLb(i) {
-    track.innerHTML = lbImgs.map(im => `<div class="lb-slide"><img data-src="${im.src}" alt=""></div>`).join("");
+  let li = 0, lbList = [];
+  function openLb(i, list = lbImgs) {
+    lbList = list;
+    track.innerHTML = lbList.map(im => `<div class="lb-slide"><img data-src="${im.src}" alt=""></div>`).join("");
     lb.classList.add("show"); lb.setAttribute("aria-hidden", "false"); document.body.style.overflow = "hidden";
     show(i, false);
   }
   function show(i, anim = true) {
     if (z > 1) unzoom();
-    li = Math.max(0, Math.min(lbImgs.length - 1, i));
+    li = Math.max(0, Math.min(lbList.length - 1, i));
     track.style.transition = anim ? "" : "none";
     track.style.transform = `translateX(${-li * 100}%)`;
     [li - 1, li, li + 1].forEach(k => { const im = track.children[k]?.querySelector("img"); if (im && !im.src) im.src = im.dataset.src; });
-    $("#lbCount").textContent = `${li + 1} / ${lbImgs.length}`;
+    $("#lbCount").textContent = `${li + 1} / ${lbList.length}`;
   }
   function closeLb() { if (z > 1) unzoom(); lb.classList.remove("show"); lb.setAttribute("aria-hidden", "true"); document.body.style.overflow = ""; }
   $("#lbClose").onclick = closeLb;
@@ -713,6 +730,9 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       <input class="search" id="memIn" type="text" placeholder="Imię i nazwisko" value="${esc(name)}" autocomplete="off">
       <div class="form" style="margin-top:12px"><b>Grupa</b><div class="chips" id="memGrp" style="padding:6px 0 0">${GROUPS.map(([k, l]) => `<button class="chip${k === g ? " add" : ""}" data-g="${k}">${l}</button>`).join("")}</div></div>
       <input class="search" id="memRole" type="text" placeholder="Funkcja (np. skrzypce) – nieobowiązkowe" value="${esc(pp.role || "")}" autocomplete="off" style="margin-top:12px">
+      <div class="face-edit"><span id="memFace">${faceOf(name || "") ? `<img class="av big" src="${esc(faceOf(name))}" alt="">` : `<span class="av big ini">${name ? initials(name) : "?"}</span>`}</span>
+        <div class="edit-actions" style="margin:0"><label class="primary" style="padding:9px 14px;border-radius:10px;background:var(--green);color:#fff;font-weight:600;font-size:14px;cursor:pointer">📷 Zdjęcie<input type="file" id="memFile" accept="image/*" hidden></label>
+        ${faceOf(name || "") ? `<button data-act="noface" class="danger">Usuń zdjęcie</button>` : ""}</div></div>
       <div class="edit-actions" style="margin-top:12px">
         <button data-act="ok" class="primary">${isNew ? "Dodaj" : "Zapisz"}</button>
         ${isNew ? "" : `<button data-act="del" class="danger">Usuń ze składu ${year}</button>`}
@@ -721,6 +741,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       if (gb) { g = gb.dataset.g; editBox.querySelectorAll("#memGrp .chip").forEach(c => c.classList.toggle("add", c === gb)); return; }
       const act = e.target.closest("[data-act]"); if (!act) return;
       const v = $("#memIn").value.trim().replace(/\s+/g, " "), role = $("#memRole").value.trim();
+      if (act.dataset.act === "noface") return removeFace(name);
       if (act.dataset.act === "del") return commit(d => memberOp(d, year, "remove", name), `Usunięto ze składu: ${name}`);
       if (!v) return closeEdit();
       if (v === name && g === groupOf(name) && role === (pp.role || "")) return closeEdit();
@@ -735,6 +756,12 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
         if (Object.keys(rec).length) d.people[v] = rec; else delete d.people[v];
       }, isNew ? `Dodano do składu: ${v}` : `Poprawiono w składzie: ${v}`);
     });
+    $("#memFile").onchange = e => {
+      const f = e.target.files[0], who = $("#memIn").value.trim().replace(/\s+/g, " ") || name;
+      if (!f) return;
+      if (!who) return toast("Najpierw wpisz imię i nazwisko.");
+      uploadFace(who, f);
+    };
     setTimeout(() => { const i = $("#memIn"); i.focus(); i.onkeydown = e => { if (e.key === "Enter") editBox.querySelector("[data-act=ok]").click(); }; }, 300);
   }
   function memberOp(d, year, op, name, to) {
@@ -911,6 +938,46 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       }
       toast("Nie udało się zapisać – spróbuj jeszcze raz.", 6000);
     }).catch(() => toast("Brak internetu – nie zapisano.", 6000));
+  }
+
+  // zdjęcie osoby → ludzie/<imie-nazwisko>.jpg w repozytorium (strona przebuduje się sama)
+  async function shrink(file, max = 700) {
+    const bmp = await createImageBitmap(file, {imageOrientation: "from-image"}).catch(() => null);
+    const img = bmp || await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file); });
+    const k = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", .86);
+  }
+  async function facePut(who, body) {
+    const path = `ludzie/${slugName(who)}.jpg`;
+    const cur = await api(`${path}?ref=main`);
+    const sha = cur.ok ? (await cur.json()).sha : undefined;
+    if (body === null && !sha) return {ok: true};
+    return api(path, {method: body === null ? "DELETE" : "PUT", body: JSON.stringify({
+      message: `Kronikarz: ${body === null ? "usunięto zdjęcie" : "zdjęcie"} – ${who}`, branch: "main", sha, ...(body === null ? {} : {content: body})})});
+  }
+  async function uploadFace(who, file) {
+    if (!getToken()) return askToken(() => uploadFace(who, file));
+    toast("Wgrywam zdjęcie…", 20000);
+    try {
+      const url = await shrink(file);
+      const r = await facePut(who, url.split(",")[1]);
+      if (r.status === 401 || r.status === 403) { try { localStorage.removeItem("kronika-token"); } catch {} return askToken(() => uploadFace(who, file)); }
+      if (!r.ok) throw 0;
+      localFaces[slugName(who)] = url;
+      closeEdit(); refresh();
+      toast(`✓ Zdjęcie: ${who}. U wszystkich za ok. 2 min.`, 5000);
+    } catch { toast("Nie udało się wgrać zdjęcia.", 6000); }
+  }
+  async function removeFace(who) {
+    if (!getToken()) return askToken(() => removeFace(who));
+    toast("Usuwam zdjęcie…", 20000);
+    const r = await facePut(who, null).catch(() => ({ok: false}));
+    if (!r.ok) return toast("Nie udało się usunąć zdjęcia.", 6000);
+    localFaces[slugName(who)] = "";
+    closeEdit(); refresh();
+    toast(`✓ Usunięto zdjęcie: ${who}`, 4000);
   }
 
   function askToken(then) {
