@@ -127,7 +127,8 @@
     },
     "2026": {
       "add": [
-        "Alexander Klimsza"
+        "Alexander Klimsza",
+        "Mariusz Gociek"
       ],
       "remove": [
         "Agnieszka Polok"
@@ -187,5 +188,6 @@
     "2025|Występ w Wierzniowicach": {
       "text": "Zbliżający się nieuchronnie koniec wakacji wcale nie popsuł nam humorów. Wręcz przeciwnie, na jubileuszu 50-lecia PZKO w Wierzniowicach pokazaliśmy na co nas stać! Sytuacja była o tyle ciekawa, że działaliśmy na dwa fronty – w tym samym czasie część tancerzy uwijała się przy stoisku w Suchej na Dniu Gminy. Kadr mieliśmy więc nieco okrojony, ale z nieocenioną pomocą przyszedł nam były tancerz Dawid Nierostek. Wskoczył w buty i Rozbarskie odtańczył tak, jakby wcale nie miał przerwy w próbach i uczęszczał ciągle. Występ był na tyle malowniczy, że zdjęcie z tego wydarzenia wylądowało w Kalendarzu Śląskim 2026."
     }
-  }
+  },
+  "people": {}
 }
