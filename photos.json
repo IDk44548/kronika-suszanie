@@ -131,7 +131,8 @@
         "Alexander Klimsza",
         "Mariusz Gociek",
         "Barbora Galuszková",
-        "Roman Mračna"
+        "Roman Mračna",
+        "Magdalena Mračna"
       ],
       "remove": [
         "Agnieszka Polok"
@@ -194,6 +195,9 @@
   },
   "people": {
     "Roman Mračna": {
+      "group": "kapela"
+    },
+    "Magdalena Mračna": {
       "group": "kapela"
     }
   }
