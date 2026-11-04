@@ -76,7 +76,31 @@ details.team summary{list-style:none;cursor:pointer;display:flex;align-items:cen
 details.team summary::-webkit-details-marker{display:none}
 details.team summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s;margin-right:4px}
 details.team[open] summary::after{transform:rotate(-135deg)}
-.chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 14px}
+details.team{padding-bottom:14px}
+.tree{display:flex;flex-direction:column;align-items:center;padding-top:4px}
+.tree .node{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:0 12px}
+.tree .stem{width:2px;height:16px;background:var(--gold)}
+.branch{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;padding-top:16px}
+.branch::before{content:"";position:absolute;top:0;left:25%;right:25%;height:16px;border:2px solid var(--gold);border-bottom:0;border-radius:12px 12px 0 0}
+.branch .node{padding:0 10px}
+.branch .chips{flex-direction:column;align-items:stretch;gap:5px}
+.branch .chip{text-align:left;border-radius:10px;padding:5px 10px;font-size:13.5px;line-height:1.35}
+details.grp summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:11px 0;font:700 17px Fraunces,serif;color:var(--green)}
+details.grp summary::-webkit-details-marker{display:none}
+details.grp summary small{font:600 12.5px Inter,sans-serif;color:var(--muted);background:var(--paper);border-radius:999px;padding:2px 8px}
+details.grp summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s;margin-right:5px}
+details.grp[open] summary::after{transform:rotate(-135deg)}
+.grp-kier summary,.grp-kapela summary{justify-content:center}
+.grp-kier summary::after,.grp-kapela summary::after{margin-left:0}
+.grp-tancerka .chip{background:#fbe9e6;color:#8c2a22}
+.grp-kapela .chip{background:var(--gold-2);color:#7a5a17}
+.grp-kapela .chips{justify-content:center}
+.chip small{opacity:.75;font-size:12.5px}
+.leads{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0 12px}
+.lead{display:block;text-align:center;background:var(--green-2);border-radius:14px;padding:10px 14px;font:inherit;color:#244f2f}
+.lead b{display:block;font-size:15.5px}
+.lead span{display:block;font-size:13px;color:var(--muted)}
 .chip{background:var(--green-2);color:#244f2f;border-radius:999px;padding:4px 11px;font-size:14px}
 
 /* timeline */
@@ -132,7 +156,9 @@ details.team[open] summary::after{transform:rotate(-135deg)}
 .toc .empty{padding:20px;color:var(--muted);text-align:center}
 
 /* lightbox */
-.lb{position:fixed;inset:0;z-index:60;background:#0f1411;display:none;touch-action:pan-y}
+.lb{position:fixed;inset:0;z-index:60;background:#0f1411;display:none;touch-action:none}
+.lb.zoomed .lb-slide img{cursor:grab}
+.lb-slide img{transform-origin:center;will-change:transform}
 .lb.show{display:block}
 .lb-track{display:flex;height:100%;transition:transform .3s ease}
 .lb-slide{flex:none;width:100%;height:100%;display:grid;place-items:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
@@ -266,8 +292,17 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   // tryb edycji tylko dla kronikarza: hasło przy wejściu (5× stuknij logo albo adres z ?edytuj)
   const PASS = "1234";
   let DEV = (() => { try { return localStorage.getItem("kronika-dev") === "1"; } catch { return false; } })();
-  const normEdits = d => ({...d, moves: d.moves || {}, members: d.members || {}, posts: d.posts || [], sections: d.sections || {}});
+  const normEdits = d => ({...d, moves: d.moves || {}, members: d.members || {}, posts: d.posts || [], sections: d.sections || {}, people: d.people || {}});
   let edits = normEdits(DATA.edits || {}), hidden = [];
+  // skład w grupach; kronikarz może każdej osobie zmienić grupę i funkcję (edits.people)
+  const GROUPS = [["kier", "Kierownictwo"], ["kapela", "Kapela"], ["tancerz", "Tancerze"], ["tancerka", "Tancerki"]];
+  const PEOPLE0 = {"Marek Waleczek": {group: "kier", role: "kierownik organizacyjny"}, "Dorota Śmiłowska": {group: "kier", role: "kierowniczka artystyczna"}};
+  const person = n => ({...(PEOPLE0[n] || {}), ...(edits.people[n] || {})});
+  const isWoman = n => { const [f, ...r] = n.split(" "); return /a$/i.test(f) || /^(elen|lucie|nikol|karin|ester|ivet)$/i.test(f) || /(ová|ská|cká|á)$/i.test(r.join(" ")); };
+  const groupOf = n => person(n).group || (isWoman(n) ? "tancerka" : "tancerz");
+  const lead = n => { const i = Object.keys(PEOPLE0).indexOf(n); return i < 0 ? 99 : i; };
+  const surname = n => n.split(" ").slice(1).join(" ") || n;
+  const bySurname = (a, b) => surname(a).localeCompare(surname(b), "pl");
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const strip = s => s.replace(/<[^>]+>/g, "");
   const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l");
@@ -350,7 +385,24 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     };
     let h = DEV ? `<div class="dev-bar"><b>✎ Tryb kronikarza</b><span>Kliknij zdjęcie, osobę ze składu albo „Nowy wpis”.</span><div><button data-dev="post" class="primary">+ Nowy wpis</button><button data-dev="hidden">Ukryte zdjęcia (${hidden.length})</button><button data-dev="off">Wyłącz edycję</button></div></div>` : "";
     h += `<div class="year-head"><h2>${y.year}</h2><span>${y.sections.length} wpisów</span></div>`;
-    if (y.members.length || DEV) h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary><div class="chips">${y.members.map(m => DEV ? `<button class="chip" data-member="${esc(m)}">${esc(m)} ✎</button>` : `<span class="chip">${esc(m)}</span>`).join("")}${DEV ? `<button class="chip add" data-member="">+ Dodaj osobę</button>` : ""}</div></details>`;
+    if (y.members.length || DEV) {
+      const by = {};
+      y.members.forEach(m => (by[groupOf(m)] = by[groupOf(m)] || []).push(m));
+      const blk = Object.fromEntries(GROUPS.map(([g, label]) => {
+        const list = (by[g] || []).sort(g === "kier" ? (a, b) => lead(a) - lead(b) || bySurname(a, b) : bySurname);
+        if (!list.length && !DEV) return [g, ""];
+        const tag = DEV ? "button" : "div", att = m => DEV ? ` data-member="${esc(m)}"` : "";
+        const items = g === "kier"
+          ? list.map(m => `<${tag} class="lead"${att(m)}><b>${esc(m)}${DEV ? " ✎" : ""}</b>${person(m).role ? `<span>${esc(person(m).role)}</span>` : ""}</${tag}>`).join("")
+          : list.map(m => `<${tag} class="chip"${att(m)}>${esc(m)}${DEV ? " ✎" : ""}${person(m).role ? ` <small>· ${esc(person(m).role)}</small>` : ""}</${tag}>`).join("");
+        const add = DEV ? `<button class="chip add" data-member="" data-group="${g}">+ Dodaj</button>` : "";
+        return [g, `<details class="grp grp-${g}" open><summary>${label}<small>${list.length}</small></summary><div class="${g === "kier" ? "leads" : "chips"}">${items}${add}</div></details>`];
+      }));
+      // drzewko: kierownictwo → kapela → tancerki (lewo) i tancerze (prawo)
+      const tree = [blk.kier, blk.kapela].filter(Boolean).map(b => `<div class="node">${b}</div><div class="stem"></div>`).join("")
+        + `<div class="branch"><div class="node">${blk.tancerka}</div><div class="node">${blk.tancerz}</div></div>`;
+      h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary><div class="tree">${tree}</div></details>`;
+    }
     h += `<div class="timeline">` + y.sections.map(s => {
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : k === "video"
         ? `<video class="vid" src="${esc(v.src || v)}#t=0.1" controls playsinline preload="metadata"></video>${DEV && v.id ? `<div class="edit-actions" style="margin-top:8px"><button data-vidid="${v.id}">✎ Przenieś / ukryj film</button></div>` : ""}` : gallery(v)).join("");
@@ -388,7 +440,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     const g = e.target.closest(".gallery button");
     if (g) return DEV ? openEdit(g.dataset.id) : openLb(+g.dataset.i);
     const mb = e.target.closest("[data-member]");
-    if (mb) { e.preventDefault(); return openMember(current.year, mb.dataset.member); }
+    if (mb) { e.preventDefault(); return openMember(current.year, mb.dataset.member, mb.dataset.group); }
     const eb = e.target.closest("[data-entry]");
     if (eb) { const s = current.sections.find(x => x.key === eb.dataset.entry); return s.post ? openPost(s.post) : openDocEntry(s); }
     const d = e.target.closest("[data-dev]");
@@ -428,25 +480,73 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     show(i, false);
   }
   function show(i, anim = true) {
+    if (z > 1) unzoom();
     li = Math.max(0, Math.min(lbImgs.length - 1, i));
     track.style.transition = anim ? "" : "none";
     track.style.transform = `translateX(${-li * 100}%)`;
     [li - 1, li, li + 1].forEach(k => { const im = track.children[k]?.querySelector("img"); if (im && !im.src) im.src = im.dataset.src; });
     $("#lbCount").textContent = `${li + 1} / ${lbImgs.length}`;
   }
-  function closeLb() { lb.classList.remove("show"); lb.setAttribute("aria-hidden", "true"); document.body.style.overflow = ""; }
+  function closeLb() { if (z > 1) unzoom(); lb.classList.remove("show"); lb.setAttribute("aria-hidden", "true"); document.body.style.overflow = ""; }
   $("#lbClose").onclick = closeLb;
   $("#lbPrev").onclick = () => show(li - 1);
   $("#lbNext").onclick = () => show(li + 1);
-  let sx = null, sy = null, dx = 0;
-  lb.addEventListener("touchstart", e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; track.style.transition = "none"; }, {passive: true});
-  lb.addEventListener("touchmove", e => { if (sx === null) return; dx = e.touches[0].clientX - sx; track.style.transform = `translateX(calc(${-li * 100}% + ${dx}px))`; }, {passive: true});
-  lb.addEventListener("touchend", e => {
+  let sx = null, sy = null, dx = 0, z = 1, zx = 0, zy = 0, pinch = null, pan0 = null, lastTap = 0;
+  const curImg = () => track.children[li]?.querySelector("img");
+  const applyZ = anim => {
+    const im = curImg(); if (!im) return;
+    const mx = Math.max(0, (im.offsetWidth * z - innerWidth) / 2), my = Math.max(0, (im.offsetHeight * z - innerHeight) / 2);
+    zx = Math.max(-mx, Math.min(mx, zx)); zy = Math.max(-my, Math.min(my, zy));
+    im.style.transition = anim ? "transform .25s" : "none";
+    im.style.transform = z > 1 ? `translate(${zx}px,${zy}px) scale(${z})` : "";
+    lb.classList.toggle("zoomed", z > 1);
+  };
+  // przybliża tak, żeby punkt pod palcem / kursorem został na miejscu
+  const zoomAt = (nz, cx, cy, anim, from = {z, zx, zy, mx: cx, my: cy}) => {
+    nz = Math.max(1, Math.min(5, nz));
+    const px = (from.mx - innerWidth / 2 - from.zx) / from.z, py = (from.my - innerHeight / 2 - from.zy) / from.z;
+    z = nz; zx = cx - innerWidth / 2 - px * nz; zy = cy - innerHeight / 2 - py * nz;
+    if (z === 1) zx = zy = 0;
+    applyZ(anim);
+  };
+  const unzoom = () => { z = 1; zx = zy = 0; applyZ(); };
+  const tdist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  lb.addEventListener("touchstart", e => {
+    if (e.touches.length === 2) {
+      const [a, b] = e.touches;
+      pinch = {d: tdist(a, b), z, zx, zy, mx: (a.clientX + b.clientX) / 2, my: (a.clientY + b.clientY) / 2}; sx = null; return;
+    }
+    const t = e.touches[0];
+    if (e.target.closest("button")) { sx = null; return; }
+    if (Date.now() - lastTap < 300) { zoomAt(z > 1 ? 1 : 2.5, t.clientX, t.clientY, true); lastTap = 0; sx = null; return; }
+    lastTap = Date.now();
+    sx = t.clientX; sy = t.clientY; dx = 0; pan0 = {zx, zy}; track.style.transition = "none";
+  }, {passive: true});
+  lb.addEventListener("touchmove", e => {
+    if (pinch && e.touches.length === 2) {
+      const [a, b] = e.touches;
+      return zoomAt(pinch.z * tdist(a, b) / pinch.d, (a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2, false, pinch);
+    }
     if (sx === null) return;
+    const t = e.touches[0];
+    if (z > 1) { zx = pan0.zx + t.clientX - sx; zy = pan0.zy + t.clientY - sy; applyZ(); return; }
+    dx = t.clientX - sx; track.style.transform = `translateX(calc(${-li * 100}% + ${dx}px))`;
+  }, {passive: true});
+  lb.addEventListener("touchend", e => {
+    if (pinch) { if (e.touches.length < 2) { pinch = null; sx = null; if (z < 1.05) { z = 1; zx = zy = 0; applyZ(true); } } return; }
+    if (sx === null) return;
+    if (z > 1) { sx = null; return; }
     const dy = e.changedTouches[0].clientY - sy; sx = null; track.style.transition = "";
     if (Math.abs(dy) > 110 && Math.abs(dy) > Math.abs(dx)) return closeLb();
     show(dx < -50 ? li + 1 : dx > 50 ? li - 1 : li);
   });
+  // komputer: kółko myszy / podwójne kliknięcie przybliża, przeciąganie przesuwa
+  lb.addEventListener("wheel", e => { if (e.target.closest("button")) return; e.preventDefault(); zoomAt(z * (e.deltaY < 0 ? 1.25 : 0.8), e.clientX, e.clientY); }, {passive: false});
+  lb.addEventListener("dblclick", e => { if (!e.target.closest("button")) zoomAt(z > 1 ? 1 : 2.5, e.clientX, e.clientY, true); });
+  let mdrag = null;
+  lb.addEventListener("mousedown", e => { if (z > 1 && !e.target.closest("button")) { mdrag = {x: e.clientX, y: e.clientY, zx, zy}; e.preventDefault(); } });
+  addEventListener("mousemove", e => { if (mdrag) { zx = mdrag.zx + e.clientX - mdrag.x; zy = mdrag.zy + e.clientY - mdrag.y; applyZ(); } });
+  addEventListener("mouseup", () => mdrag = null);
   document.addEventListener("keydown", e => {
     if (lb.classList.contains("show")) { if (e.key === "Escape") closeLb(); if (e.key === "ArrowLeft") show(li - 1); if (e.key === "ArrowRight") show(li + 1); }
     else if (e.key === "Escape") { closeToc(); closeEdit(); }
@@ -597,20 +697,34 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   }
 
   // skład zespołu: popraw / usuń / dodaj osobę (zmiany per rok, oryginał zostaje w Google Docs)
-  function openMember(year, name) {
-    const isNew = !name;
+  function openMember(year, name, group) {
+    const isNew = !name, pp = name ? person(name) : {};
+    let g = name ? groupOf(name) : group || "tancerz";
     openSheet(`<h4 class="edit-h">${isNew ? `Dodaj osobę – ${year}` : "Osoba w składzie"}</h4>
       <input class="search" id="memIn" type="text" placeholder="Imię i nazwisko" value="${esc(name)}" autocomplete="off">
+      <div class="form" style="margin-top:12px"><b>Grupa</b><div class="chips" id="memGrp" style="padding:6px 0 0">${GROUPS.map(([k, l]) => `<button class="chip${k === g ? " add" : ""}" data-g="${k}">${l}</button>`).join("")}</div></div>
+      <input class="search" id="memRole" type="text" placeholder="Funkcja (np. skrzypce) – nieobowiązkowe" value="${esc(pp.role || "")}" autocomplete="off" style="margin-top:12px">
       <div class="edit-actions" style="margin-top:12px">
-        <button data-act="ok" class="primary">${isNew ? "Dodaj" : "Zapisz zmianę"}</button>
+        <button data-act="ok" class="primary">${isNew ? "Dodaj" : "Zapisz"}</button>
         ${isNew ? "" : `<button data-act="del" class="danger">Usuń ze składu ${year}</button>`}
       </div>`, e => {
+      const gb = e.target.closest("[data-g]");
+      if (gb) { g = gb.dataset.g; editBox.querySelectorAll("#memGrp .chip").forEach(c => c.classList.toggle("add", c === gb)); return; }
       const act = e.target.closest("[data-act]"); if (!act) return;
-      const v = $("#memIn").value.trim().replace(/\s+/g, " ");
+      const v = $("#memIn").value.trim().replace(/\s+/g, " "), role = $("#memRole").value.trim();
       if (act.dataset.act === "del") return commit(d => memberOp(d, year, "remove", name), `Usunięto ze składu: ${name}`);
-      if (!v || v === name) return closeEdit();
-      if (isNew) commit(d => memberOp(d, year, "add", v), `Dodano do składu: ${v}`);
-      else commit(d => memberOp(d, year, "rename", name, v), `Poprawiono: ${name} → ${v}`);
+      if (!v) return closeEdit();
+      if (v === name && g === groupOf(name) && role === (pp.role || "")) return closeEdit();
+      commit(d => {
+        if (isNew) memberOp(d, year, "add", v);
+        else if (v !== name) memberOp(d, year, "rename", name, v);
+        d.people = d.people || {};
+        if (name && v !== name) delete d.people[name];
+        const base = PEOPLE0[v] || {}, auto = base.group || (isWoman(v) ? "tancerka" : "tancerz"), rec = {};
+        if (g !== auto) rec.group = g;
+        if (role !== (base.role || "")) rec.role = role;
+        if (Object.keys(rec).length) d.people[v] = rec; else delete d.people[v];
+      }, isNew ? `Dodano do składu: ${v}` : `Poprawiono w składzie: ${v}`);
     });
     setTimeout(() => { const i = $("#memIn"); i.focus(); i.onkeydown = e => { if (e.key === "Enter") editBox.querySelector("[data-act=ok]").click(); }; }, 300);
   }
