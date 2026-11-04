@@ -91,11 +91,12 @@ details.grp summary::-webkit-details-marker{display:none}
 details.grp summary small{font:600 12.5px Inter,sans-serif;color:var(--muted);background:var(--paper);border-radius:999px;padding:2px 8px}
 details.grp summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s;margin-right:5px}
 details.grp[open] summary::after{transform:rotate(-135deg)}
-.grp-kier summary,.grp-kapela summary{justify-content:center}
-.grp-kier summary::after,.grp-kapela summary::after{margin-left:0}
+.grp-kier summary{justify-content:center}
+.grp-kier summary::after{margin-left:0}
 .grp-tancerka .chip{background:#fbe9e6;color:#8c2a22}
-.grp-kapela .chip{background:var(--gold-2);color:#7a5a17}
-.grp-kapela .chips{justify-content:center}
+.band .chip{background:var(--gold-2);color:#7a5a17}
+.band summary small{font-weight:600;font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:999px;padding:2px 8px;margin-left:8px;margin-right:auto}
+.empty-band{color:var(--muted);font-size:14px}
 .chip small{opacity:.75;font-size:12.5px}
 .leads{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0 12px}
 .lead{display:block;text-align:center;background:var(--green-2);border-radius:14px;padding:10px 14px;font:inherit;color:#244f2f}
@@ -390,7 +391,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       y.members.forEach(m => (by[groupOf(m)] = by[groupOf(m)] || []).push(m));
       const blk = Object.fromEntries(GROUPS.map(([g, label]) => {
         const list = (by[g] || []).sort(g === "kier" ? (a, b) => lead(a) - lead(b) || bySurname(a, b) : bySurname);
-        if (!list.length && !DEV) return [g, ""];
+        if (!list.length && !DEV && g !== "kapela") return [g, ""];
         const tag = DEV ? "button" : "div", att = m => DEV ? ` data-member="${esc(m)}"` : "";
         const items = g === "kier"
           ? list.map(m => `<${tag} class="lead"${att(m)}><b>${esc(m)}${DEV ? " ✎" : ""}</b>${person(m).role ? `<span>${esc(person(m).role)}</span>` : ""}</${tag}>`).join("")
@@ -399,9 +400,12 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
         return [g, `<details class="grp grp-${g}" open><summary>${label}<small>${list.length}</small></summary><div class="${g === "kier" ? "leads" : "chips"}">${items}${add}</div></details>`];
       }));
       // drzewko: kierownictwo → kapela → tancerki (lewo) i tancerze (prawo)
-      const tree = [blk.kier, blk.kapela].filter(Boolean).map(b => `<div class="node">${b}</div><div class="stem"></div>`).join("")
+      const tree = [blk.kier].filter(Boolean).map(b => `<div class="node">${b}</div><div class="stem"></div>`).join("")
         + `<div class="branch"><div class="node">${blk.tancerka}</div><div class="node">${blk.tancerz}</div></div>`;
       h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary><div class="tree">${tree}</div></details>`;
+      // kapela ma własną sekcję obok składu tanecznego
+      h += blk.kapela.replace('<details class="grp grp-kapela" open><summary>Kapela', `<details class="team band"${DEV ? " open" : ""}><summary>🎻 Kapela`)
+        .replace('<div class="chips"></div>', '<div class="chips"><span class="empty-band">Skład kapeli wkrótce.</span></div>');
     }
     h += `<div class="timeline">` + y.sections.map(s => {
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : k === "video"
