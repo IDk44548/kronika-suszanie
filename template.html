@@ -95,7 +95,11 @@ details.grp[open] summary::after{transform:rotate(-135deg)}
 .grp-kier summary::after{margin-left:0}
 .grp-tancerka .chip{background:#fbe9e6;color:#8c2a22}
 .band .chip{background:var(--gold-2);color:#7a5a17}
-.band summary small{font-weight:600;font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:999px;padding:2px 8px;margin-left:8px;margin-right:auto}
+.tree .band-wrap{background:var(--gold-2);border-color:#eedcae}
+.band-wrap summary{justify-content:center}
+.band-wrap summary::after{margin-left:0}
+.band-wrap .chips{justify-content:center}
+.band-wrap .chip{background:var(--paper)}
 .empty-band{color:var(--muted);font-size:14px}
 .chip small{opacity:.75;font-size:12.5px}
 .leads{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0 12px}
@@ -400,12 +404,13 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
         return [g, `<details class="grp grp-${g}" open><summary>${label}<small>${list.length}</small></summary><div class="${g === "kier" ? "leads" : "chips"}">${items}${add}</div></details>`];
       }));
       // drzewko: kierownictwo → kapela → tancerki (lewo) i tancerze (prawo)
-      const tree = [blk.kier].filter(Boolean).map(b => `<div class="node">${b}</div><div class="stem"></div>`).join("")
+      // drzewko: kierownictwo → kapela (własna sekcja) → tancerki (lewo) i tancerze (prawo)
+      const band = blk.kapela.replace('<details class="grp grp-kapela" open><summary>Kapela', '<details class="grp grp-kapela" open><summary>🎻 Kapela')
+        .replace('<div class="chips"></div>', '<div class="chips"><span class="empty-band">Skład kapeli wkrótce.</span></div>');
+      const tree = (blk.kier ? `<div class="node">${blk.kier}</div><div class="stem"></div>` : "")
+        + `<div class="node band-wrap">${band}</div><div class="stem"></div>`
         + `<div class="branch"><div class="node">${blk.tancerka}</div><div class="node">${blk.tancerz}</div></div>`;
       h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary><div class="tree">${tree}</div></details>`;
-      // kapela ma własną sekcję obok składu tanecznego
-      h += blk.kapela.replace('<details class="grp grp-kapela" open><summary>Kapela', `<details class="team band"${DEV ? " open" : ""}><summary>🎻 Kapela`)
-        .replace('<div class="chips"></div>', '<div class="chips"><span class="empty-band">Skład kapeli wkrótce.</span></div>');
     }
     h += `<div class="timeline">` + y.sections.map(s => {
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : k === "video"
