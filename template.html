@@ -525,7 +525,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
             const open = DEV ? ` data-fg="${esc(k)}" role="button"` : ` data-face="${faceImgs.push({src: DATA.faces[k], cap: m}) - 1}" role="button"`;
             pic = `<div class="pimg cut" style="aspect-ratio:${(f.ww / f.wh * 3 / 4).toFixed(3)}"><img src="${esc(DATA.faces[k])}" alt="${esc(m)}" loading="lazy"${frameCss(f)}${open}></div>`;
           }
-          return `<div class="stem"></div><div class="node special"><div class="special-label">✦ ${esc(v.label || "")}</div>
+          return `<div class="stem"></div><div class="node special"><div class="special-label">◆ ${esc(v.label || "")}</div>
             <figure class="pcard">${pic}<figcaption><ol><li${DEV ? ` data-member="${esc(m)}" role="button"` : ""}>${esc(m)}${DEV ? " ✎" : ""}</li></ol></figcaption></figure></div>`;
         }).join("");
       h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${mem.length} osób</summary><div class="tree">${tree}</div></details>`;
@@ -535,7 +535,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
         ? `<video class="vid" src="${esc(v.src || v)}#t=0.1" controls playsinline preload="metadata"></video>${DEV && v.id ? `<div class="edit-actions" style="margin-top:8px"><button data-vidid="${v.id}">✎ Przenieś / ukryj film</button></div>` : ""}` : gallery(v)).join("");
       const len = strip(body).length, fold = len > 900 && !DEV;
       return `<article class="entry" id="${s.id}"><div class="card${fold ? " collapsed" : ""}${s.hiddenEntry ? " ghost" : ""}">
-        <div class="card-head"><span class="date${s.date ? "" : " nodate"}">${s.date ? esc(s.date) : "✦ " + y.year}</span><h3>${esc(s.title)}</h3>
+        <div class="card-head"><span class="date${s.date ? "" : " nodate"}">${s.date ? esc(s.date) : "◆ " + y.year}</span><h3>${esc(s.title)}</h3>
         ${DEV ? `<div class="edit-actions" style="margin:10px 0 0"><button data-entry="${esc(s.key)}">✎ Edytuj wpis</button>${s.hiddenEntry ? `<span class="tag">ukryty</span>` : s.edited ? `<span class="tag">poprawiony na stronie</span>` : ""}</div>` : ""}</div>
         <div class="card-body">${body}</div>${fold ? `<button class="more">Czytaj dalej</button>` : ""}</div></article>`;
     }).join("") + `</div>`;
@@ -588,7 +588,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     let h = "";
     for (const y of [...years].reverse()) {
       const items = y.sections.filter(s => !nq || norm(s.title + " " + s.date + " " + strip(s.blocks.filter(b => b[0] === "text").map(b => b[1]).join(" "))).includes(nq));
-      if (items.length) h += `<h4>${y.year}</h4>` + items.map(s => `<a href="#${s.id}" data-y="${y.year}" data-s="${s.id}"><small>${s.date ? esc(s.date) : "✦"}</small><span>${esc(s.title)}</span></a>`).join("");
+      if (items.length) h += `<h4>${y.year}</h4>` + items.map(s => `<a href="#${s.id}" data-y="${y.year}" data-s="${s.id}"><small>${s.date ? esc(s.date) : "◆"}</small><span>${esc(s.title)}</span></a>`).join("");
     }
     $("#toc").innerHTML = h || `<div class="empty">Nic nie znaleziono 🤷</div>`;
   }
@@ -824,7 +824,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       const nq = norm(q.trim());
       $("#editList").innerHTML = [...years].reverse().map(y => {
         const it = y.sections.filter(s => !nq || norm(s.title + " " + s.date).includes(nq));
-        return it.length ? `<h4>${y.year}</h4>` + it.map(s => `<a href="#" data-to="${esc(s.key)}"${place && place.key === s.key ? ` class="here"` : ""}><small>${s.date ? esc(s.date) : "✦"}</small><span>${esc(s.title)}</span></a>`).join("") : "";
+        return it.length ? `<h4>${y.year}</h4>` + it.map(s => `<a href="#" data-to="${esc(s.key)}"${place && place.key === s.key ? ` class="here"` : ""}><small>${s.date ? esc(s.date) : "◆"}</small><span>${esc(s.title)}</span></a>`).join("") : "";
       }).join("") || `<div class="empty">Nic nie znaleziono</div>`;
     };
     list("");

@@ -352,6 +352,9 @@
     ],
     "foto-karolina-zyla": [
       "Karolina Żyła"
+    ],
+    "foto-roman-kubiena": [
+      "Roman Kubiena"
     ]
   },
   "faceSpots": {
@@ -580,6 +583,12 @@
         0.48,
         0.45
       ]
+    ],
+    "foto-roman-kubiena": [
+      [
+        0.53,
+        0.5
+      ]
     ]
   },
   "faceWhole": [
@@ -587,7 +596,8 @@
     "foto-wojciech-pribula",
     "foto-zuzana-plaskova",
     "foto-krystyna-tomanova",
-    "foto-karolina-zyla"
+    "foto-karolina-zyla",
+    "foto-roman-kubiena"
   ],
   "special": {
     "Wojciech Pribula": {
