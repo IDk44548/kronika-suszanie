@@ -190,7 +190,8 @@ details.grp[open] summary::after{transform:rotate(-135deg)}
 .pcard figcaption > ol:first-child{list-style:none;padding:0;font-weight:600}
 .pcard li{padding:1px 0}
 .pcard .role{display:block;font-weight:400;color:var(--muted);font-size:12px}
-.band-wrap .pcards{grid-template-columns:repeat(auto-fill,minmax(120px,150px));justify-content:center}
+.band-wrap .pcards{display:flex;flex-wrap:wrap;justify-content:center}
+.band-wrap .pcard{flex:0 1 calc(33.3% - 7px);min-width:84px;max-width:160px}
 .grp-kapela .pcard{border-top:3px solid var(--gold)}
 .pcard li[data-member]{cursor:pointer}
 .grp-tancerka .pcard{border-top:3px solid #e6a59c}
@@ -500,7 +501,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       }));
       // drzewko: kierownictwo → kapela (własna sekcja) → tancerki (lewo) i tancerze (prawo)
       const band = blk.kapela.replace('<details class="grp grp-kapela" open><summary>Kapela', '<details class="grp grp-kapela" open><summary>🎻 Kapela')
-        .replace('<div class="chips"></div>', '<div class="chips"><span class="empty-band">Skład kapeli wkrótce.</span></div>');
+        .replace('<div class="chips"></div>', cards.kapela.length ? '' : '<div class="chips"><span class="empty-band">Skład kapeli wkrótce.</span></div>');
       const tree = (blk.kier ? `<div class="node">${blk.kier}</div><div class="stem"></div>` : "")
         + `<div class="node band-wrap">${band}</div><div class="stem"></div>`
         + `<div class="branch"><div class="node">${blk.tancerka}</div><div class="node">${blk.tancerz}</div></div>`;

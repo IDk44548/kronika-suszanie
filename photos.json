@@ -323,6 +323,12 @@
       "Vojciech Zyder",
       "Beata Pawera",
       "Gabriela Rucká"
+    ],
+    "foto-magdalena-mracna": [
+      "Magdalena Mračna"
+    ],
+    "foto-roman-mracna": [
+      "Roman Mračna"
     ]
   },
   "faceSpots": {
@@ -514,6 +520,18 @@
       [
         0.77,
         0.43
+      ]
+    ],
+    "foto-magdalena-mracna": [
+      [
+        0.55,
+        0.3
+      ]
+    ],
+    "foto-roman-mracna": [
+      [
+        0.62,
+        0.25
       ]
     ]
   }
