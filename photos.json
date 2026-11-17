@@ -324,5 +324,197 @@
       "Beata Pawera",
       "Gabriela Rucká"
     ]
+  },
+  "faceSpots": {
+    "foto-adam-zolich": [
+      [
+        0.5,
+        0.37
+      ]
+    ],
+    "foto-agata-smilowska-natalia-kux": [
+      [
+        0.38,
+        0.42
+      ],
+      [
+        0.7,
+        0.45
+      ]
+    ],
+    "foto-agnieszka-polok-aneta-santarius-agata-zachwieja": [
+      [
+        0.17,
+        0.37
+      ],
+      [
+        0.47,
+        0.47
+      ],
+      [
+        0.77,
+        0.4
+      ]
+    ],
+    "foto-anna-grzebien-mariusz-grzebien-sebastian-kontir": [
+      [
+        0.25,
+        0.46
+      ],
+      [
+        0.48,
+        0.42
+      ],
+      [
+        0.78,
+        0.38
+      ]
+    ],
+    "foto-anna-jiravska-bogna-jiravska": [
+      [
+        0.33,
+        0.43
+      ],
+      [
+        0.62,
+        0.44
+      ]
+    ],
+    "foto-dominika-wroblova": [
+      [
+        0.5,
+        0.45
+      ]
+    ],
+    "foto-dominika-smilowska-dorota-pawera-kamila-wrobel": [
+      [
+        0.18,
+        0.51
+      ],
+      [
+        0.5,
+        0.5
+      ],
+      [
+        0.8,
+        0.48
+      ]
+    ],
+    "foto-dorota-smilowska": [
+      [
+        0.5,
+        0.45
+      ]
+    ],
+    "foto-dorota-chlebik-nina-kotackova": [
+      [
+        0.35,
+        0.44
+      ],
+      [
+        0.57,
+        0.45
+      ]
+    ],
+    "foto-edyta-kupczak-lucie-galuszkova-gabriela-nozicka": [
+      [
+        0.13,
+        0.54
+      ],
+      [
+        0.47,
+        0.52
+      ],
+      [
+        0.77,
+        0.51
+      ]
+    ],
+    "foto-elen-preisnerova-adela-zyder-agata-preisnerova-barbara-galus": [
+      [
+        0.15,
+        0.46
+      ],
+      [
+        0.35,
+        0.44
+      ],
+      [
+        0.6,
+        0.44
+      ],
+      [
+        0.85,
+        0.48
+      ]
+    ],
+    "foto-filip-jiravsky": [
+      [
+        0.4,
+        0.18
+      ]
+    ],
+    "foto-jan-szymurda": [
+      [
+        0.5,
+        0.4
+      ]
+    ],
+    "foto-marek-waleczek": [
+      [
+        0.5,
+        0.42
+      ]
+    ],
+    "foto-alexandra-poncza-karolina-drozdzik": [
+      [
+        0.37,
+        0.42
+      ],
+      [
+        0.62,
+        0.42
+      ]
+    ],
+    "foto-ryszard-fierla": [
+      [
+        0.5,
+        0.45
+      ]
+    ],
+    "foto-tadeusz-czapek": [
+      [
+        0.5,
+        0.39
+      ]
+    ],
+    "foto-tomek-foltyn-roman-slowik-marek-zachwieja": [
+      [
+        0.2,
+        0.39
+      ],
+      [
+        0.5,
+        0.4
+      ],
+      [
+        0.8,
+        0.4
+      ]
+    ],
+    "foto-vojciech-zyder-beata-pawera-gabriela-rucka": [
+      [
+        0.27,
+        0.37
+      ],
+      [
+        0.5,
+        0.4
+      ],
+      [
+        0.77,
+        0.43
+      ]
+    ]
   }
 }
