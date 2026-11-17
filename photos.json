@@ -343,6 +343,12 @@
     ],
     "foto-wojciech-pribula": [
       "Wojciech Pribula"
+    ],
+    "foto-zuzana-plaskova": [
+      "Zuzana Plášková"
+    ],
+    "foto-krystyna-tomanova": [
+      "Krystyna Tomanová"
     ]
   },
   "faceSpots": {
@@ -553,11 +559,25 @@
         0.47,
         0.52
       ]
+    ],
+    "foto-zuzana-plaskova": [
+      [
+        0.5,
+        0.3
+      ]
+    ],
+    "foto-krystyna-tomanova": [
+      [
+        0.5,
+        0.3
+      ]
     ]
   },
   "faceWhole": [
     "foto-alexandra-poncza-karolina-drozdzik",
-    "foto-wojciech-pribula"
+    "foto-wojciech-pribula",
+    "foto-zuzana-plaskova",
+    "foto-krystyna-tomanova"
   ],
   "special": {
     "Wojciech Pribula": {
