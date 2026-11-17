@@ -162,7 +162,9 @@
         "Alexander Klimsza",
         "Roman Kubiena"
       ],
-      "remove": [],
+      "remove": [
+        "Wojciech Pribula"
+      ],
       "rename": {}
     },
     "2026": {
@@ -175,7 +177,8 @@
         "Tomek Foltyn"
       ],
       "remove": [
-        "Agnieszka Polok"
+        "Agnieszka Polok",
+        "Wojciech Pribula"
       ],
       "rename": {
         "Anna Firczyk": "Anna Grzebień"
@@ -598,14 +601,5 @@
     "foto-krystyna-tomanova",
     "foto-karolina-zyla",
     "foto-roman-kubiena"
-  ],
-  "special": {
-    "Wojciech Pribula": {
-      "label": "Członek jedyny w swoim rodzaju",
-      "years": [
-        "2025",
-        "2026"
-      ]
-    }
-  }
+  ]
 }
