@@ -356,11 +356,13 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       return {x0: a / n + (sw - ww) / 2, y0: clamp(.29, 0, 1 - wh), ww, wh};
     }
     const xs = sp.slice(a, b + 1).map(p => p[0]), yc = sp.slice(a, b + 1).reduce((t, p) => t + p[1], 0) / (b - a + 1);
-    const mL = a > 0 ? Math.min(.17, (xs[0] - sp[a - 1][0]) * .5) : .17, mR = b < n - 1 ? Math.min(.17, (sp[b + 1][0] - xs[xs.length - 1]) * .5) : .17;
-    let x0 = xs[0] - (avatar ? .13 : mL), ww = Math.min(1, xs[xs.length - 1] + (avatar ? .13 : mR) - x0);
+    let mL = a > 0 ? Math.min(.17, (xs[0] - sp[a - 1][0]) * .5) : .17, mR = b < n - 1 ? Math.min(.17, (sp[b + 1][0] - xs[xs.length - 1]) * .5) : .17;
+    if (a === b) mL = mR = Math.max(.12, Math.min(mL, mR));  // jedna osoba: twarz na środku
+    if (avatar) mL = mR = .13;
+    let x0 = xs[0] - mL, ww = Math.min(1, xs[xs.length - 1] + mR - x0);
     x0 = clamp(x0, 0, 1 - ww);
     const wh = avatar ? ww * .75 : a === b ? ww : clamp(ww * .7, .3, .42);
-    return {x0, y0: clamp(yc - wh * (avatar ? .45 : .32), 0, 1 - wh), ww, wh};
+    return {x0, y0: clamp(yc - wh * (avatar ? .5 : a === b ? .38 : .32), 0, 1 - wh), ww, wh};
   }
   const frameCss = f => ` style="width:${100 / f.ww}%;left:${-f.x0 / f.ww * 100}%;top:${-f.y0 / f.wh * 100}%"`;
   const avatarOf = m => {
@@ -456,12 +458,15 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     let h = DEV ? `<div class="dev-bar"><b>✎ Tryb kronikarza</b><span>Kliknij zdjęcie, osobę ze składu albo „Nowy wpis”.</span><div><button data-dev="post" class="primary">+ Nowy wpis</button><button data-dev="hidden">Ukryte zdjęcia (${hidden.length})</button><button data-dev="off">Wyłącz edycję</button></div></div>` : "";
     h += `<div class="year-head"><h2>${y.year}</h2><span>${y.sections.length} wpisów</span></div>`;
     faceImgs = [];
-    if (y.members.length || DEV) {
+    // kapela jest ta sama w każdym roku: zbieramy ją ze wszystkich lat
+    const band = [...new Set(years.flatMap(yy => yy.members).filter(m => groupOf(m) === "kapela"))];
+    const mem = [...new Set([...y.members.filter(m => groupOf(m) !== "kapela"), ...band])];
+    if (mem.length || DEV) {
       const by = {};
-      y.members.forEach(m => (by[groupOf(m)] = by[groupOf(m)] || []).push(m));
+      mem.forEach(m => (by[groupOf(m)] = by[groupOf(m)] || []).push(m));
       // wspólne zdjęcia dzielimy na kawałki: osobno kapela, tancerki i tancerze, a osoby spoza składu odcinamy
       // (zakładamy, że na zdjęciu stoją obok siebie mniej więcej po równo, w kolejności od lewej)
-      const byCanon = new Map(y.members.map(m => [canon(m), m]));
+      const byCanon = new Map(mem.map(m => [canon(m), m]));
       const placed = new Set(), cards = {kapela: [], tancerka: [], tancerz: []};
       for (const [k, names] of Object.entries(edits.faceGroups)) {
         if (!(DATA.faces || {})[k]) continue;
@@ -500,12 +505,12 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
         return [g, `<details class="grp grp-${g}" open><summary>${label}<small>${list.length}</small></summary><div class="${g === "kier" ? "leads" : "chips"}">${items}${add}</div></details>`];
       }));
       // drzewko: kierownictwo → kapela (własna sekcja) → tancerki (lewo) i tancerze (prawo)
-      const band = blk.kapela.replace('<details class="grp grp-kapela" open><summary>Kapela', '<details class="grp grp-kapela" open><summary>🎻 Kapela')
+      const bandHtml = blk.kapela.replace('<details class="grp grp-kapela" open><summary>Kapela', '<details class="grp grp-kapela" open><summary>🎻 Kapela')
         .replace('<div class="chips"></div>', cards.kapela.length ? '' : '<div class="chips"><span class="empty-band">Skład kapeli wkrótce.</span></div>');
       const tree = (blk.kier ? `<div class="node">${blk.kier}</div><div class="stem"></div>` : "")
-        + `<div class="node band-wrap">${band}</div><div class="stem"></div>`
+        + `<div class="node band-wrap">${bandHtml}</div><div class="stem"></div>`
         + `<div class="branch"><div class="node">${blk.tancerka}</div><div class="node">${blk.tancerz}</div></div>`;
-      h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary><div class="tree">${tree}</div></details>`;
+      h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${mem.length} osób</summary><div class="tree">${tree}</div></details>`;
     }
     h += `<div class="timeline">` + y.sections.map(s => {
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : k === "video"
