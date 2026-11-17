@@ -193,6 +193,9 @@ details.grp[open] summary::after{transform:rotate(-135deg)}
 .band-wrap .pcards{display:flex;flex-wrap:wrap;justify-content:center}
 .band-wrap .pcard{flex:0 1 calc(33.3% - 7px);min-width:84px;max-width:160px}
 .grp-kapela .pcard{border-top:3px solid var(--gold)}
+.tree .special{display:flex;flex-direction:column;align-items:center;padding:12px;background:linear-gradient(135deg,#fdf4dc,#f3e6ff);border-color:#e3cfa0;width:auto;min-width:200px}
+.special-label{font:700 16px Fraunces,serif;color:#7a5a17;margin-bottom:10px;text-align:center}
+.special .pcard{width:160px;border-top:3px solid #b98ce0}
 .pcard li[data-member]{cursor:pointer}
 .grp-tancerka .pcard{border-top:3px solid #e6a59c}
 .grp-tancerz .pcard{border-top:3px solid #9cc4a3}
@@ -461,13 +464,16 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     faceImgs = [];
     // kapela jest ta sama w każdym roku: zbieramy ją ze wszystkich lat
     const band = [...new Set(years.flatMap(yy => yy.members).filter(m => groupOf(m) === "kapela"))];
+    // osoby wyróżnione w danym roku (edits.special) mają własne miejsce pod tancerzami
+    const special = Object.entries(edits.special || {}).filter(([n, v]) => (v.years || []).includes(y.year) && y.members.includes(n));
+    const isSpecial = m => special.some(([n]) => n === m);
     const mem = [...new Set([...y.members.filter(m => groupOf(m) !== "kapela"), ...band])];
     if (mem.length || DEV) {
       const by = {};
-      mem.forEach(m => (by[groupOf(m)] = by[groupOf(m)] || []).push(m));
+      mem.filter(m => !isSpecial(m)).forEach(m => (by[groupOf(m)] = by[groupOf(m)] || []).push(m));
       // wspólne zdjęcia dzielimy na kawałki: osobno kapela, tancerki i tancerze, a osoby spoza składu odcinamy
       // (zakładamy, że na zdjęciu stoją obok siebie mniej więcej po równo, w kolejności od lewej)
-      const byCanon = new Map(mem.map(m => [canon(m), m]));
+      const byCanon = new Map(mem.filter(m => !isSpecial(m)).map(m => [canon(m), m]));
       const placed = new Set(), cards = {kapela: [], tancerka: [], tancerz: []};
       for (const [k, names] of Object.entries(edits.faceGroups)) {
         if (!(DATA.faces || {})[k]) continue;
@@ -510,7 +516,18 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
         .replace('<div class="chips"></div>', cards.kapela.length ? '' : '<div class="chips"><span class="empty-band">Skład kapeli wkrótce.</span></div>');
       const tree = (blk.kier ? `<div class="node">${blk.kier}</div><div class="stem"></div>` : "")
         + `<div class="node band-wrap">${bandHtml}</div><div class="stem"></div>`
-        + `<div class="branch"><div class="node">${blk.tancerka}</div><div class="node">${blk.tancerz}</div></div>`;
+        + `<div class="branch"><div class="node">${blk.tancerka}</div><div class="node">${blk.tancerz}</div></div>`
+        + special.map(([m, v]) => {
+          const k = photoKeyOf(m), names = k ? edits.faceGroups[k] : [], i = names.indexOf(canon(m));
+          let pic = "";
+          if (k) {
+            const f = frameOf(k, i, i, names.length);
+            const open = DEV ? ` data-fg="${esc(k)}" role="button"` : ` data-face="${faceImgs.push({src: DATA.faces[k], cap: m}) - 1}" role="button"`;
+            pic = `<div class="pimg cut" style="aspect-ratio:${(f.ww / f.wh * 3 / 4).toFixed(3)}"><img src="${esc(DATA.faces[k])}" alt="${esc(m)}" loading="lazy"${frameCss(f)}${open}></div>`;
+          }
+          return `<div class="stem"></div><div class="node special"><div class="special-label">✦ ${esc(v.label || "")}</div>
+            <figure class="pcard">${pic}<figcaption><ol><li${DEV ? ` data-member="${esc(m)}" role="button"` : ""}>${esc(m)}${DEV ? " ✎" : ""}</li></ol></figcaption></figure></div>`;
+        }).join("");
       h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${mem.length} osób</summary><div class="tree">${tree}</div></details>`;
     }
     h += `<div class="timeline">` + y.sections.map(s => {

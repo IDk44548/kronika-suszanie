@@ -340,6 +340,9 @@
     ],
     "foto-roman-mracna": [
       "Roman Mračna"
+    ],
+    "foto-wojciech-pribula": [
+      "Wojciech Pribula"
     ]
   },
   "faceSpots": {
@@ -544,9 +547,25 @@
         0.62,
         0.25
       ]
+    ],
+    "foto-wojciech-pribula": [
+      [
+        0.47,
+        0.52
+      ]
     ]
   },
   "faceWhole": [
-    "foto-alexandra-poncza-karolina-drozdzik"
-  ]
+    "foto-alexandra-poncza-karolina-drozdzik",
+    "foto-wojciech-pribula"
+  ],
+  "special": {
+    "Wojciech Pribula": {
+      "label": "Członek jedyny w swoim rodzaju",
+      "years": [
+        "2025",
+        "2026"
+      ]
+    }
+  }
 }
