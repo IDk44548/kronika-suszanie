@@ -349,6 +349,9 @@
     ],
     "foto-krystyna-tomanova": [
       "Krystyna Tomanová"
+    ],
+    "foto-karolina-zyla": [
+      "Karolina Żyła"
     ]
   },
   "faceSpots": {
@@ -571,13 +574,20 @@
         0.5,
         0.3
       ]
+    ],
+    "foto-karolina-zyla": [
+      [
+        0.48,
+        0.45
+      ]
     ]
   },
   "faceWhole": [
     "foto-alexandra-poncza-karolina-drozdzik",
     "foto-wojciech-pribula",
     "foto-zuzana-plaskova",
-    "foto-krystyna-tomanova"
+    "foto-krystyna-tomanova",
+    "foto-karolina-zyla"
   ],
   "special": {
     "Wojciech Pribula": {

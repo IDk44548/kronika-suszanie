@@ -347,7 +347,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   const slugName = n => n.replace(/ł/g, "l").replace(/Ł/g, "L").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const localFaces = {};  // wgrane / usunięte w tej sesji, zanim strona się przebuduje
   // wspólne zdjęcia: edits.faceGroups = {plik: [imiona od lewej]}; ta sama osoba bywa w różnych latach pod innym nazwiskiem
-  const ALIASES = {"Anna Firczyk": "Anna Grzebień", "Vojtěch Zyder": "Vojciech Zyder"};
+  const ALIASES = {"Anna Firczyk": "Anna Grzebień", "Vojtěch Zyder": "Vojciech Zyder", "Karolina Owczarzy": "Karolina Żyła"};
   const canon = n => ALIASES[n] || n;
   const photoKeyOf = n => { const c = canon(n); for (const [k, names] of Object.entries(edits.faceGroups)) if (names.includes(c) && (DATA.faces || {})[k]) return k; return null; };
   // kadr na twarze: faceSpots = {plik: [[x, y] środka twarzy, od lewej]} w ułamkach szerokości/wysokości zdjęcia (pionowe 3:4)
