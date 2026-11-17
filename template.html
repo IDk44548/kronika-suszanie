@@ -175,6 +175,29 @@ details.grp[open] summary::after{transform:rotate(-135deg)}
 .lb-track{display:flex;height:100%;transition:transform .3s ease}
 .lb-slide{flex:none;width:100%;height:100%;display:grid;place-items:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 .lb-slide img{max-width:100%;max-height:100%;object-fit:contain}
+.lb-cap{position:absolute;left:0;right:0;bottom:0;padding:14px 18px calc(16px + env(safe-area-inset-bottom));color:#fff;font-size:15px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.7));pointer-events:none}
+.lb-cap:empty{display:none}
+.pcards{display:grid;gap:10px;padding:2px 0 10px}
+.pcard{margin:0;background:var(--paper);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.pcard img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;cursor:zoom-in;background:var(--line)}
+.pcard figcaption{padding:8px 10px 10px;font-size:13.5px;line-height:1.35}
+.pcard figcaption small{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.pcard ol{margin:0;padding-left:18px}
+.pcard figcaption > ol:first-child{list-style:none;padding:0;font-weight:600}
+.pcard li{padding:1px 0}
+.pcard li.out{color:var(--muted);font-style:italic}
+.pcard li[data-member]{cursor:pointer}
+.grp-tancerka .pcard{border-top:3px solid #e6a59c}
+.grp-tancerz .pcard{border-top:3px solid #9cc4a3}
+.allfoto{margin:0 0 14px;border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--paper)}
+.allfoto img{display:block;width:100%;cursor:zoom-in}
+.allfoto figcaption{padding:8px 12px;font:700 16px Fraunces,serif;color:var(--green);text-align:center}
+.fg-list{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.fg-list li{display:flex;align-items:center;gap:6px;background:var(--bg);border-radius:10px;padding:6px 8px}
+.fg-list li b{flex:1;font-weight:600}
+.fg-list li span{color:var(--muted);font-size:13px;min-width:18px}
+.fg-list button{width:34px;height:34px;border-radius:9px;background:var(--paper);border:1px solid var(--line);font-size:15px}
+.fg-list button:disabled{opacity:.35}
 .lb-ui{position:absolute;top:calc(env(safe-area-inset-top) + 10px);left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;color:#fff;font-weight:600}
 .lb-ui button,.lb-nav{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;font-size:22px}
 .lb-nav{position:absolute;top:50%;transform:translateY(-50%)}
@@ -285,6 +308,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
 
 <div class="lb" id="lb" aria-hidden="true">
   <div class="lb-track" id="lbTrack"></div>
+  <div class="lb-cap" id="lbCap"></div>
   <div class="lb-ui"><span id="lbCount"></span><button id="lbClose" aria-label="Zamknij">✕</button></div>
   <button class="lb-nav lb-prev" id="lbPrev" aria-label="Poprzednie">‹</button>
   <button class="lb-nav lb-next" id="lbNext" aria-label="Następne">›</button>
@@ -304,7 +328,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   // tryb edycji tylko dla kronikarza: hasło przy wejściu (5× stuknij logo albo adres z ?edytuj)
   const PASS = "1234";
   let DEV = (() => { try { return localStorage.getItem("kronika-dev") === "1"; } catch { return false; } })();
-  const normEdits = d => ({...d, moves: d.moves || {}, members: d.members || {}, posts: d.posts || [], sections: d.sections || {}, people: d.people || {}});
+  const normEdits = d => ({...d, moves: d.moves || {}, members: d.members || {}, posts: d.posts || [], sections: d.sections || {}, people: d.people || {}, faceGroups: d.faceGroups || {}});
   let edits = normEdits(DATA.edits || {}), hidden = [];
   // skład w grupach; kronikarz może każdej osobie zmienić grupę i funkcję (edits.people)
   const GROUPS = [["kier", "Kierownictwo"], ["kapela", "Kapela"], ["tancerz", "Tancerze"], ["tancerka", "Tancerki"]];
@@ -315,7 +339,11 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
   const lead = n => { const i = Object.keys(PEOPLE0).indexOf(n); return i < 0 ? 99 : i; };
   const slugName = n => n.replace(/ł/g, "l").replace(/Ł/g, "L").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const localFaces = {};  // wgrane / usunięte w tej sesji, zanim strona się przebuduje
-  const faceOf = n => { const k = slugName(n); return k in localFaces ? localFaces[k] : (DATA.faces || {})[k] || ""; };
+  // wspólne zdjęcia: edits.faceGroups = {plik: [imiona od lewej]}; ta sama osoba bywa w różnych latach pod innym nazwiskiem
+  const ALIASES = {"Anna Firczyk": "Anna Grzebień", "Vojtěch Zyder": "Vojciech Zyder"};
+  const canon = n => ALIASES[n] || n;
+  const photoKeyOf = n => { const c = canon(n); for (const [k, names] of Object.entries(edits.faceGroups)) if (names.includes(c) && (DATA.faces || {})[k]) return k; return null; };
+  const faceOf = n => { const g = photoKeyOf(n); if (g) return DATA.faces[g]; const k = slugName(n); return k in localFaces ? localFaces[k] : (DATA.faces || {})[k] || ""; };
   const initials = n => n.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
   let faceImgs = [];
   const surname = n => n.split(" ").slice(1).join(" ") || n;
@@ -406,6 +434,23 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     if (y.members.length || DEV) {
       const by = {};
       y.members.forEach(m => (by[groupOf(m)] = by[groupOf(m)] || []).push(m));
+      // wspólne zdjęcia tancerzy → karta w kolumnie, w której jest większość osób ze zdjęcia
+      const byCanon = new Map(y.members.map(m => [canon(m), m]));
+      const placed = new Set(), cards = {tancerka: [], tancerz: []};
+      for (const [k, names] of Object.entries(edits.faceGroups)) {
+        if (!(DATA.faces || {})[k]) continue;
+        const here = names.map(n => byCanon.get(n)).filter(m => m && (groupOf(m) === "tancerka" || groupOf(m) === "tancerz"));
+        if (!here.length) continue;
+        const w = here.filter(m => groupOf(m) === "tancerka").length * 2 - here.length;
+        const col = w > 0 ? "tancerka" : w < 0 ? "tancerz" : groupOf(here[0]);
+        here.forEach(m => placed.add(m));
+        const shown = names.map(n => byCanon.get(n) || n);
+        const cap = (names.length > 1 ? "Od lewej: " : "") + shown.join(", ");
+        const open = DEV ? ` data-fg="${esc(k)}" role="button"` : ` data-face="${faceImgs.push({src: DATA.faces[k], cap}) - 1}" role="button"`;
+        cards[col].push(`<figure class="pcard"><img src="${esc(DATA.faces[k])}" alt="${esc(cap)}" loading="lazy"${open}>
+          <figcaption>${names.length > 1 ? `<small>od lewej</small>` : ""}<ol>${shown.map(n => byCanon.has(canon(n)) || y.members.includes(n)
+            ? `<li${DEV ? ` data-member="${esc(n)}" role="button"` : ""}>${esc(n)}${DEV ? " ✎" : ""}</li>` : `<li class="out">${esc(n)}</li>`).join("")}</ol></figcaption></figure>`);
+      }
       const blk = Object.fromEntries(GROUPS.map(([g, label]) => {
         const list = (by[g] || []).sort(g === "kier" ? (a, b) => lead(a) - lead(b) || bySurname(a, b) : bySurname);
         if (!list.length && !DEV && g !== "kapela") return [g, ""];
@@ -415,16 +460,22 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
           ? list.map(m => `<${tag} class="lead"${att(m)}${fa(m)}>${faceOf(m) ? `<img class="av big" src="${esc(faceOf(m))}" alt="" loading="lazy">` : `<span class="av big ini">${initials(m)}</span>`}<b>${esc(m)}${DEV ? " ✎" : ""}</b>${person(m).role ? `<span>${esc(person(m).role)}</span>` : ""}</${tag}>`).join("")
           : list.map(m => `<${tag} class="chip${faceOf(m) ? " has-av" : ""}"${att(m)}${fa(m)}>${faceOf(m) ? `<img class="av" src="${esc(faceOf(m))}" alt="" loading="lazy">` : ""}${esc(m)}${DEV ? " ✎" : ""}${person(m).role ? ` <small>· ${esc(person(m).role)}</small>` : ""}</${tag}>`).join("");
         const add = DEV ? `<button class="chip add" data-member="" data-group="${g}">+ Dodaj</button>` : "";
+        if (g === "tancerka" || g === "tancerz") {
+          const rest = list.filter(m => !placed.has(m));
+          const chips = rest.map(m => `<${tag} class="chip"${att(m)}>${esc(m)}${DEV ? " ✎" : ""}${person(m).role ? ` <small>· ${esc(person(m).role)}</small>` : ""}</${tag}>`).join("");
+          return [g, `<details class="grp grp-${g}" open><summary>${label}<small>${list.length}</small></summary><div class="pcards">${cards[g].join("")}</div><div class="chips">${chips}${add}</div></details>`];
+        }
         return [g, `<details class="grp grp-${g}" open><summary>${label}<small>${list.length}</small></summary><div class="${g === "kier" ? "leads" : "chips"}">${items}${add}</div></details>`];
       }));
-      // drzewko: kierownictwo → kapela → tancerki (lewo) i tancerze (prawo)
       // drzewko: kierownictwo → kapela (własna sekcja) → tancerki (lewo) i tancerze (prawo)
       const band = blk.kapela.replace('<details class="grp grp-kapela" open><summary>Kapela', '<details class="grp grp-kapela" open><summary>🎻 Kapela')
         .replace('<div class="chips"></div>', '<div class="chips"><span class="empty-band">Skład kapeli wkrótce.</span></div>');
       const tree = (blk.kier ? `<div class="node">${blk.kier}</div><div class="stem"></div>` : "")
         + `<div class="node band-wrap">${band}</div><div class="stem"></div>`
         + `<div class="branch"><div class="node">${blk.tancerka}</div><div class="node">${blk.tancerz}</div></div>`;
-      h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary><div class="tree">${tree}</div></details>`;
+      const all = idx === years.length - 1 && (DATA.faces || {}).wszyscy
+        ? `<figure class="allfoto"><img src="${esc(DATA.faces.wszyscy)}" alt="Cały zespół" loading="lazy" data-face="${faceImgs.push({src: DATA.faces.wszyscy, cap: "Cały zespół"}) - 1}" role="button"><figcaption>Cały zespół</figcaption></figure>` : "";
+      h += `<details class="team"${DEV ? " open" : ""}><summary>Skład zespołu · ${y.members.length} osób</summary>${all}<div class="tree">${tree}</div></details>`;
     }
     h += `<div class="timeline">` + y.sections.map(s => {
       const body = s.blocks.map(([k, v]) => k === "text" ? `<p>${v}</p>` : k === "video"
@@ -462,6 +513,8 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     if (vm) return openEdit(vm.dataset.vidid);
     const g = e.target.closest(".gallery button");
     if (g) return DEV ? openEdit(g.dataset.id) : openLb(+g.dataset.i);
+    const fg = e.target.closest("[data-fg]");
+    if (fg) return openFaceGroup(fg.dataset.fg);
     const fc = e.target.closest("[data-face]");
     if (fc) return openLb(+fc.dataset.face, faceImgs);
     const mb = e.target.closest("[data-member]");
@@ -512,6 +565,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     track.style.transform = `translateX(${-li * 100}%)`;
     [li - 1, li, li + 1].forEach(k => { const im = track.children[k]?.querySelector("img"); if (im && !im.src) im.src = im.dataset.src; });
     $("#lbCount").textContent = `${li + 1} / ${lbList.length}`;
+    $("#lbCap").textContent = lbList[li].cap || "";
   }
   function closeLb() { if (z > 1) unzoom(); lb.classList.remove("show"); lb.setAttribute("aria-hidden", "true"); document.body.style.overflow = ""; }
   $("#lbClose").onclick = closeLb;
@@ -763,6 +817,29 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
       uploadFace(who, f);
     };
     setTimeout(() => { const i = $("#memIn"); i.focus(); i.onkeydown = e => { if (e.key === "Enter") editBox.querySelector("[data-act=ok]").click(); }; }, 300);
+  }
+  function openFaceGroup(k) {
+    let names = [...(edits.faceGroups[k] || [])];
+    const draw = () => {
+      $("#fgList").innerHTML = names.map((n, i) => `<li><span>${i + 1}.</span><b>${esc(n)}</b>
+        <button data-mv="${i}" data-d="-1" ${i ? "" : "disabled"} aria-label="W lewo">↑</button>
+        <button data-mv="${i}" data-d="1" ${i < names.length - 1 ? "" : "disabled"} aria-label="W prawo">↓</button>
+        <button data-rm="${i}" aria-label="Usuń">✕</button></li>`).join("");
+      $("#fgAdd").innerHTML = `<option value="">+ Dodaj osobę ze składu…</option>` + current.members.filter(m => !names.includes(canon(m))).sort(bySurname).map(m => `<option>${esc(m)}</option>`).join("");
+    };
+    openSheet(`<h4 class="edit-h">Kto jest na zdjęciu?</h4>
+      <img class="edit-prev" src="${esc(DATA.faces[k])}" alt="">
+      <p style="margin:10px 0 0;color:var(--muted);font-size:14px">Ustaw imiona w kolejności <b>od lewej</b> strzałkami ↑ ↓.</p>
+      <ol class="fg-list" id="fgList"></ol>
+      <select class="search" id="fgAdd" style="margin-top:10px"></select>
+      <div class="edit-actions sticky"><button data-act="ok" class="primary">Zapisz</button></div>`, e => {
+      const mv = e.target.closest("[data-mv]"), rm = e.target.closest("[data-rm]");
+      if (mv) { const i = +mv.dataset.mv, j = i + +mv.dataset.d; [names[i], names[j]] = [names[j], names[i]]; return draw(); }
+      if (rm) { names.splice(+rm.dataset.rm, 1); return draw(); }
+      if (e.target.closest("[data-act=ok]")) commit(d => { d.faceGroups = d.faceGroups || {}; d.faceGroups[k] = names; }, `Kolejność na zdjęciu: ${names.join(", ")}`);
+    });
+    draw();
+    $("#fgAdd").onchange = e => { if (e.target.value) { names.push(canon(e.target.value)); draw(); } };
   }
   function memberOp(d, year, op, name, to) {
     const m = d.members[year] = d.members[year] || {};

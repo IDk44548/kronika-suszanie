@@ -234,5 +234,83 @@
     "Magdalena Mračna": {
       "group": "kapela"
     }
+  },
+  "faceGroups": {
+    "foto-adam-zolich": [
+      "Adam Zolich"
+    ],
+    "foto-agata-smilowska-natalia-kux": [
+      "Agata Śmiłowska",
+      "Natalia Kux"
+    ],
+    "foto-agnieszka-polok-aneta-santarius-agata-zachwieja": [
+      "Agnieszka Polok",
+      "Aneta Santarius",
+      "Agata Zachwieja"
+    ],
+    "foto-anna-grzebien-mariusz-grzebien-sebastian-kontir": [
+      "Anna Grzebień",
+      "Mariusz Grzebień",
+      "Sebastian Kontír"
+    ],
+    "foto-anna-jiravska-bogna-jiravska": [
+      "Anna Jiravská",
+      "Bogna Jiravská"
+    ],
+    "foto-dominika-wroblova": [
+      "Dominika Wróblová"
+    ],
+    "foto-dominika-smilowska-dorota-pawera-kamila-wrobel": [
+      "Dominika Śmiłowska",
+      "Dorota Pawera",
+      "Kamila Wróbel"
+    ],
+    "foto-dorota-smilowska": [
+      "Dorota Śmiłowska"
+    ],
+    "foto-dorota-chlebik-nina-kotackova": [
+      "Dorota Chlebik",
+      "Nina Kotačková"
+    ],
+    "foto-edyta-kupczak-lucie-galuszkova-gabriela-nozicka": [
+      "Edyta Kupczak",
+      "Lucie Galuszková",
+      "Gabriela Nožička"
+    ],
+    "foto-elen-preisnerova-adela-zyder-agata-preisnerova-barbara-galus": [
+      "Elen Preisnerová",
+      "Adela Zyder",
+      "Agata Preisnerová",
+      "Barbora Galuszková"
+    ],
+    "foto-filip-jiravsky": [
+      "Filip Jiravský"
+    ],
+    "foto-jan-szymurda": [
+      "Jan Szymurda"
+    ],
+    "foto-marek-waleczek": [
+      "Marek Waleczek"
+    ],
+    "foto-alexandra-poncza-karolina-drozdzik": [
+      "Alexandra Poncza",
+      "Karolina Droździk"
+    ],
+    "foto-ryszard-fierla": [
+      "Ryszard Fierla"
+    ],
+    "foto-tadeusz-czapek": [
+      "Tadeusz Czapek"
+    ],
+    "foto-tomek-foltyn-roman-slowik-marek-zachwieja": [
+      "Tomek Foltyn",
+      "Roman Słowik",
+      "Marek Zachwieja"
+    ],
+    "foto-vojciech-zyder-beata-pawera-gabriela-rucka": [
+      "Vojciech Zyder",
+      "Beata Pawera",
+      "Gabriela Rucká"
+    ]
   }
 }
