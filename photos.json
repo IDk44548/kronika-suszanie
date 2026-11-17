@@ -166,7 +166,8 @@
         "Mariusz Gociek",
         "Barbora Galuszková",
         "Roman Mračna",
-        "Magdalena Mračna"
+        "Magdalena Mračna",
+        "Tomek Foltyn"
       ],
       "remove": [
         "Agnieszka Polok"
@@ -238,6 +239,9 @@
       "group": "kapela"
     },
     "Magdalena Mračna": {
+      "group": "kapela"
+    },
+    "Tomek Foltyn": {
       "group": "kapela"
     }
   },
