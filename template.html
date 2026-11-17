@@ -358,7 +358,7 @@ button.chip{font:inherit;font-size:14px;cursor:pointer}
     const xs = sp.slice(a, b + 1).map(p => p[0]), yc = sp.slice(a, b + 1).reduce((t, p) => t + p[1], 0) / (b - a + 1);
     let mL = a > 0 ? Math.min(.17, (xs[0] - sp[a - 1][0]) * .5) : .17, mR = b < n - 1 ? Math.min(.17, (sp[b + 1][0] - xs[xs.length - 1]) * .5) : .17;
     if (a === b) mL = mR = Math.max(.12, Math.min(mL, mR));  // jedna osoba: twarz na środku
-    if (avatar) mL = mR = .13;
+    if (avatar) mL = mR = .2;
     let x0 = xs[0] - mL, ww = Math.min(1, xs[xs.length - 1] + mR - x0);
     x0 = clamp(x0, 0, 1 - ww);
     const wh = avatar ? ww * .75 : a === b ? ww : clamp(ww * .7, .3, .42);
