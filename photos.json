@@ -266,8 +266,8 @@
       "Adam Zolich"
     ],
     "foto-agata-smilowska-natalia-kux": [
-      "Agata Śmiłowska",
-      "Natalia Kux"
+      "Natalia Kux",
+      "Agata Śmiłowska"
     ],
     "foto-agnieszka-polok-aneta-santarius-agata-zachwieja": [
       "Agnieszka Polok",
@@ -280,8 +280,8 @@
       "Sebastian Kontír"
     ],
     "foto-anna-jiravska-bogna-jiravska": [
-      "Anna Jiravská",
-      "Bogna Jiravská"
+      "Bogna Jiravská",
+      "Anna Jiravská"
     ],
     "foto-dominika-wroblova": [
       "Dominika Wróblová"
@@ -295,8 +295,8 @@
       "Dorota Śmiłowska"
     ],
     "foto-dorota-chlebik-nina-kotackova": [
-      "Dorota Chlebik",
-      "Nina Kotačková"
+      "Nina Kotačková",
+      "Dorota Chlebik"
     ],
     "foto-edyta-kupczak-lucie-galuszkova-gabriela-nozicka": [
       "Edyta Kupczak",
@@ -319,8 +319,8 @@
       "Marek Waleczek"
     ],
     "foto-alexandra-poncza-karolina-drozdzik": [
-      "Alexandra Poncza",
-      "Karolina Droździk"
+      "Karolina Droździk",
+      "Alexandra Poncza"
     ],
     "foto-ryszard-fierla": [
       "Ryszard Fierla"
@@ -358,6 +358,18 @@
     ],
     "foto-roman-kubiena": [
       "Roman Kubiena"
+    ],
+    "foto-mariusz-gociek": [
+      "Mariusz Gociek"
+    ],
+    "foto-michal-owczarzy": [
+      "Michał Owczarzy"
+    ],
+    "foto-alexander-klimsza": [
+      "Alexander Klimsza"
+    ],
+    "foto-lena-mrozek": [
+      "Lena Mrózek"
     ]
   },
   "faceSpots": {
@@ -592,6 +604,30 @@
         0.53,
         0.5
       ]
+    ],
+    "foto-mariusz-gociek": [
+      [
+        0.5,
+        0.36
+      ]
+    ],
+    "foto-michal-owczarzy": [
+      [
+        0.5,
+        0.4
+      ]
+    ],
+    "foto-alexander-klimsza": [
+      [
+        0.5,
+        0.4
+      ]
+    ],
+    "foto-lena-mrozek": [
+      [
+        0.5,
+        0.4
+      ]
     ]
   },
   "faceWhole": [
@@ -600,6 +636,9 @@
     "foto-zuzana-plaskova",
     "foto-krystyna-tomanova",
     "foto-karolina-zyla",
-    "foto-roman-kubiena"
+    "foto-roman-kubiena",
+    "foto-michal-owczarzy",
+    "foto-alexander-klimsza",
+    "foto-lena-mrozek"
   ]
 }
