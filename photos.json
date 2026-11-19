@@ -174,7 +174,10 @@
         "Barbora Galuszková",
         "Roman Mračna",
         "Magdalena Mračna",
-        "Tomek Foltyn"
+        "Tomek Foltyn",
+        "Radek Urban",
+        "Andrzej Pribula",
+        "Lucka"
       ],
       "remove": [
         "Agnieszka Polok",
@@ -258,6 +261,15 @@
       "group": "kapela"
     },
     "Tomek Foltyn": {
+      "group": "kapela"
+    },
+    "Radek Urban": {
+      "group": "kapela"
+    },
+    "Andrzej Pribula": {
+      "group": "kapela"
+    },
+    "Lucka": {
       "group": "kapela"
     }
   },
@@ -370,6 +382,15 @@
     ],
     "foto-lena-mrozek": [
       "Lena Mrózek"
+    ],
+    "foto-radek-urban": [
+      "Radek Urban"
+    ],
+    "foto-andrzej-pribula": [
+      "Andrzej Pribula"
+    ],
+    "foto-lucka": [
+      "Lucka"
     ]
   },
   "faceSpots": {
@@ -628,6 +649,24 @@
         0.5,
         0.4
       ]
+    ],
+    "foto-radek-urban": [
+      [
+        0.5,
+        0.4
+      ]
+    ],
+    "foto-andrzej-pribula": [
+      [
+        0.5,
+        0.4
+      ]
+    ],
+    "foto-lucka": [
+      [
+        0.5,
+        0.4
+      ]
     ]
   },
   "faceWhole": [
@@ -640,6 +679,9 @@
     "foto-michal-owczarzy",
     "foto-alexander-klimsza",
     "foto-lena-mrozek",
-    "foto-mariusz-gociek"
+    "foto-mariusz-gociek",
+    "foto-radek-urban",
+    "foto-andrzej-pribula",
+    "foto-lucka"
   ]
 }
