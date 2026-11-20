@@ -177,7 +177,7 @@
         "Tomek Foltyn",
         "Radek Urban",
         "Andrzej Pribula",
-        "Lucka"
+        "Dominika Gomolová"
       ],
       "remove": [
         "Agnieszka Polok",
@@ -269,7 +269,7 @@
     "Andrzej Pribula": {
       "group": "kapela"
     },
-    "Lucka": {
+    "Dominika Gomolová": {
       "group": "kapela"
     }
   },
@@ -389,8 +389,8 @@
     "foto-andrzej-pribula": [
       "Andrzej Pribula"
     ],
-    "foto-lucka": [
-      "Lucka"
+    "foto-dominika-gomolova": [
+      "Dominika Gomolová"
     ]
   },
   "faceSpots": {
@@ -662,7 +662,7 @@
         0.4
       ]
     ],
-    "foto-lucka": [
+    "foto-dominika-gomolova": [
       [
         0.5,
         0.4
@@ -682,6 +682,6 @@
     "foto-mariusz-gociek",
     "foto-radek-urban",
     "foto-andrzej-pribula",
-    "foto-lucka"
+    "foto-dominika-gomolova"
   ]
 }
